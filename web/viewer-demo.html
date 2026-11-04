@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viewer-Test | balki strom</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { --rand: #c8cdd4; --text: #1d2430; --leise: #5a6472; --akzent: #1d4fd8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: var(--text); background: #f4f6f8;
+         display: grid; grid-template-rows: auto 1fr auto; height: 100vh; height: 100dvh; }
+  header { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px; border-bottom: 1px solid var(--rand); background: #fff; }
+  header b { margin-right: 6px; }
+  button, select, input { font: inherit; padding: 4px 8px; border: 1px solid var(--rand); border-radius: 6px; background: #fff; }
+  button:hover { border-color: var(--akzent); }
+  #ansicht { position: relative; min-height: 240px; }
+  #status { position: absolute; left: 8px; top: 8px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,.85); pointer-events: none; }
+  #status:empty { display: none; }
+  #fallback { padding: 24px; }
+  footer { max-height: 30vh; overflow: auto; padding: 6px 8px; background: #fff; border-top: 1px solid var(--rand); font: 12px/1.35 ui-monospace, monospace; }
+  footer div { white-space: pre-wrap; }
+  label { color: var(--leise); }
+</style>
+<script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
+</head>
+<body>
+<header>
+  <b>Viewer-Test</b>
+  <button data-ort="386025.1,5817322.1" title="Pfalzburger Straße 21">Mitte</button>
+  <button data-ort="386067.5,5817334.8" title="Pfalzburger Straße 20">Mitte 2</button>
+  <button data-ort="386225.2,5817361.7" title="Uhlandstraße 140">Rand O</button>
+  <button data-ort="386069.4,5817143.7" title="Pfalzburger Straße 59">Rand S</button>
+  <button data-ort="385976.1,5817513.8" title="Düsseldorfer Straße 65">Rand N</button>
+  <button data-ort="390000,5817300">außerhalb</button>
+  <label>Qualität <select id="q"><option>auto</option><option>niedrig</option><option>hoch</option></select></label>
+  <label>Modus <select id="modus"><option>rahmen</option><option>drehen</option></select></label>
+  <label>Sonne <input id="tag" type="date" value="2026-06-21"> <input id="zeit" type="range" min="4" max="21" step="0.25" value="13"> <span id="zeitText"></span></label>
+  <button id="spielen">Tag abspielen</button>
+  <button id="sonneAus">Sonne aus</button>
+  <button id="modul">Module am Pick/Rahmen</button>
+  <button id="weg">Marker/Module/Rahmen weg</button>
+  <button id="stat">Statistik</button>
+</header>
+<div id="ansicht"><div id="status"></div></div>
+<footer id="log"></footer>
+<script type="module">
+import { erstelleViewer, ViewerNichtVerfuegbar, berlinZeit } from './js/viewer.js';
+
+const $ = s => document.querySelector(s);
+const log = (...a) => { const d = document.createElement('div'); d.textContent = `${new Date().toLocaleTimeString()}  ${a.join(' ')}`; $('#log').prepend(d); console.log(...a); };
+const params = new URLSearchParams(location.search);
+$('#q').value = params.get('q') || 'auto';
+let viewer = null, letzterPick = null, letzterRahmen = null, spiel = null;
+
+async function start() {
+  viewer?.entsorge();
+  try {
+    viewer = await erstelleViewer($('#ansicht'), { manifest: 'tiles/tiles.json', qualitaet: $('#q').value, debug: true });
+  } catch (e) {
+    if (e instanceof ViewerNichtVerfuegbar) { $('#ansicht').innerHTML = `<p id="fallback">${e.message}</p>`; return; }
+    throw e;
+  }
+  window.viewer = viewer;
+  log(`Qualität: ${viewer.qualitaet} (${viewer.grund})`);
+  viewer.beiStatus(s => { $('#status').textContent = s.ladend ? `${s.text}` : s.text; });
+  viewer.beiAuswahl(p => {
+    letzterPick = p;
+    const az = (Math.atan2(p.nx, p.ny) * 180 / Math.PI + 360) % 360;
+    log(`Auswahl ${p.kachel}: x=${p.x} y=${p.y} z=${p.z}  n=(${p.nx}, ${p.ny}, ${p.nz})  Azimut ${az.toFixed(0)}°`);
+    viewer.zeigeMarker(p.x, p.y, p.z);
+  });
+  viewer.beiFehlgriff(f => log(`kein Treffer auf einer Hauswand (${f.art})`));
+  viewer.beiRahmen(r => {
+    letzterRahmen = r; letzterPick = null;
+    const az = (Math.atan2(r.nx, r.ny) * 180 / Math.PI + 360) % 360;
+    log(`Rahmen ${r.kachel}: Breite ${r.breite_m} m, Höhe ${r.hoehe_m} m, Unterkante Mitte x=${r.x} y=${r.y} z=${r.z}, Azimut ${az.toFixed(0)}°`);
+  });
+  const ort = params.get('ort');
+  if (ort) zeige(...ort.split(',').map(Number));
+}
+
+async function zeige(x, y) {
+  const t0 = performance.now();
+  const ok = await viewer.zeigeOrt(x, y);
+  log(`zeigeOrt(${x}, ${y}) -> ${ok} nach ${Math.round(performance.now() - t0)} ms, Modus ${viewer.modus}`);
+  $('#modus').value = viewer.modus;
+}
+
+const hhmm = h => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
+function tag() { const [y, m, d] = $('#tag').value.split('-').map(Number); return new Date(y, m - 1, d); }
+function sonne() {      // Schieber = Uhrzeit Berlin
+  spiel?.stopp(); spiel = null;
+  const h = +$('#zeit').value;
+  const s = viewer?.setzeSonne(berlinZeit(tag(), h));
+  $('#zeitText').textContent = `${hhmm(h)}` + (s ? ` (Az ${s.azimut.toFixed(0)}°, Höhe ${s.hoehe.toFixed(0)}°)` : '');
+}
+function spielen() {
+  spiel?.stopp();
+  const fmt = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
+  spiel = viewer.spieleSonne({ tag: tag(), von: 6, bis: 21, dauer_s: 8, beiZeit: d => { $('#zeitText').textContent = fmt.format(d); } });
+}
+
+document.querySelectorAll('[data-ort]').forEach(b => b.onclick = () => zeige(...b.dataset.ort.split(',').map(Number)));
+$('#q').onchange = start;
+$('#zeit').oninput = sonne;
+$('#tag').onchange = sonne;
+$('#spielen').onclick = spielen;
+$('#sonneAus').onclick = () => { spiel?.stopp(); viewer.setzeSonne(null); $('#zeitText').textContent = 'aus'; };
+$('#modus').onchange = () => viewer.setzeModus($('#modus').value);
+$('#modul').onclick = () => {
+  const p = letzterPick || letzterRahmen;
+  if (!p) return log('erst eine Hauswand antippen oder einen Rahmen ziehen');
+  const h = Math.hypot(p.nx, p.ny) || 1;
+  const ux = -p.ny / h, uy = p.nx / h, ox = p.x + p.nx * 0.3, oy = p.y + p.ny * 0.3;
+  const quad = (s) => [[ox + ux * s, oy + uy * s, p.z - 0.1], [ox + ux * (s + 1.72), oy + uy * (s + 1.72), p.z - 0.1],
+                       [ox + ux * (s + 1.72), oy + uy * (s + 1.72), p.z + 1.03], [ox + ux * s, oy + uy * s, p.z + 1.03]];
+  viewer.zeigeModule([quad(-1.76), quad(0.04)]);
+};
+$('#weg').onclick = () => { viewer.zeigeMarker(null); viewer.zeigeModule(null); viewer.zeigeRahmen(null); };
+$('#stat').onclick = () => log(JSON.stringify(viewer.statistik()));
+start();
+</script>
+</body>
+</html>

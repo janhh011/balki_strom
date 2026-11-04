@@ -5,3 +5,5 @@ scipy
 pyproj
 pandas
 pvlib
+fast-simplification
+mapbox-earcut

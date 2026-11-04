@@ -1,174 +1,151 @@
-# Architektur: balki strom auf einem eigenen Server (VPS)
+# Architektur balki strom (Mesh-Version)
 
-Stand: Oktober 2026. Ziel: eine schnelle, gut auffindbare Seite, bei der Nutzer ihren Balkon selbst finden, mit möglichst wenig Kosten für KI-Aufrufe, ohne Tracking und ohne Angriffsfläche.
+Stand: 04.11.2026. Ziel: **so einfach wie möglich.** Adresse eingeben → eigenes Haus in 3D sehen →
+auf den Balkon tippen → Ertrag, Kosten, Amortisation → „So einfach geht's“ (Vermieter, Kauf, Montage,
+Marktstammdatenregister). Kostenlos, ohne Anmeldung, ohne Cookies, ohne Tracking, nicht kommerziell.
+Erwartete Last: höchstens ~10 gleichzeitige Nutzer.
 
-## Überblick
+## Grundentscheidungen
+
+1. **Das Berliner 3D-Mesh ist die Hauptsache.** Nutzer sehen ihr echtes Haus mit Fototextur und tippen
+   direkt auf ihren Balkon. Kein Wand-Auswählen, kein Rechteck-Zeichnen, keine KI-Balkonerkennung
+   (keine API-Kosten, kein API-Key auf dem Server).
+2. **Kacheln sind Pakete.** Eine heruntergeladene Mesh-Kachel wird mit **einem Befehl** zu einem
+   statischen Web-Paket plus Server-Cache verarbeitet und in `web/tiles/tiles.json` eingetragen.
+   Weitere Kacheln = denselben Befehl noch einmal ausführen.
+3. **Schwache Geräte zuerst.** Der Browser lädt nur Zellen in der Nähe der Adresse, Geometrie
+   quantisiert, Texturen in Stufen (2048 px für schwache Geräte, 4096 px sonst – nie 8192).
+4. **Der Server rechnet nur den Ertrag** (Horizont + Jahressimulation, ~1 s). Alles andere ist statisch.
+   Wirtschaftlichkeit (Eigenverbrauch, €, Amortisation) rechnet der Browser.
+5. **Alle Koordinaten zwischen Modulen sind EPSG:25833** (x = Ost, y = Nord, z = Höhe DHHN2016, Meter).
+   Lokale Ursprünge sind Sache des jeweiligen Moduls.
+
+## Verzeichnisse
 
 ```
-Browser ──HTTPS──▶ Caddy (TLS, HTTP/2+3, Kompression, Ratenlimit, Basic-Auth für /intern)
-                    ├── statisch: index.html, Fassadenbilder, Luftbild, Angebotsseiten   (99 % der Anfragen)
-                    └── /api/*  ──▶ 127.0.0.1:8000  server/app.py (systemd, eigener Nutzer, Sandbox)
-                                       ├── Rechner (pvlib/numpy, Kachel im Speicher, ~1 s je Angebot)
-                                       ├── Claude-API nur für die eine angeklickte Hauswand, danach Cache
-                                       └── Daten: JSON-Caches → später SQLite/PostgreSQL
+balki/                    Python-Paket (Server + Pipeline gemeinsam)
+  physik.py               Wetter, Sonnenstand, Horizont, Ertrag (aus dem alten angebot.py übernommen)
+  rechner.py              Tipp-Punkt + Normale -> Module -> Ertrag; lädt Server-Caches je Kachel
+pipeline/
+  kachel.py               "python3 pipeline/kachel.py data/<kachel-ordner>" -> Web-Paket + Server-Cache
+  adressen.py             amtliche Hauskoordinaten für alle Kacheln aus tiles.json -> web/adressen.json
+server/app.py             Statische Dateien aus web/ + POST /api/ertrag
+web/                      Webroot (wird so ausgeliefert)
+  index.html  css/  fonts/  vendor/three/
+  js/app.js  js/suche.js  js/ergebnis.js  js/schritte.js  js/lastgang.js  js/params.js
+  js/viewer.js
+  tiles/                  ERZEUGT, nicht im Repo
+    tiles.json
+    <kachel-id>/ ...      Geometrie-Zellen, Texturstufen, meta.json
+  adressen.json           ERZEUGT, nicht im Repo
+data/                     NICHT im Repo
+  <kachel-ordner>/        Rohkachel (OBJ, MTL, JPG) aus dem Berlin-3D-Downloadportal
+  umgebung/               LoD2 + bDOM (offene Daten) für Schatten über den Kachelrand hinaus
+  work/<kachel-id>/       Server-Cache: Punktwolke, Baum-Markierung, Gelände
 ```
 
-**Server:** Hetzner Cloud (Rechenzentrum in Deutschland, AV-Vertrag verfügbar), z. B. CPX31 (4 vCPU, 8 GB RAM, ca. 15 €/Monat), Ubuntu LTS. Für eine Kachel reicht auch weniger. Für ganz Berlin rechnet die Pipeline vorab auf einem stärkeren Rechner; der VPS liefert nur aus und rechnet einzelne Balkone.
+## Schnittstellen
 
-## Was wo passiert
+### `web/tiles/tiles.json` (von `pipeline/kachel.py` geschrieben)
 
-| Schritt | Wo | Kosten |
-|---|---|---|
-| Adresse suchen | im Browser (`adressen.json`, amtliche Hauskoordinaten, dl-de/zero) | 0, keine Daten verlassen den Browser |
-| Hauswände und Ausrichtung | vorab berechnet (`data.js`) | 0 |
-| Balkone auf der Wand finden | `POST /api/fassade/<id>/analyse` → **ein** Claude-Aufruf je Wand, Ergebnis für alle Nutzer gespeichert | ca. 0,5–1 Cent je Wand, höchstens einmal |
-| Balkon selbst einzeichnen | Browser schickt nur Wand-ID, Rechteck und Geländerart | 0 (kein KI-Aufruf) |
-| Sonne, Schatten, Ertrag | `POST /api/angebot` → Rechner im Speicher, ca. 1 s | CPU |
-| Eigenverbrauch, Wirtschaftlichkeit | im Browser (`lastgang.js`, minutengenau) | 0 |
-
-Die KI-Kosten sind dadurch nach oben begrenzt: höchstens einmal je Hauswand (eine Kachel hat ca. 800 Wände, ganz Berlin grob 1–2 Mio. – davon werden aber nur die angeklickt, die jemand sehen will).
-
-## Schutz gegen Missbrauch
-
-- **API-Key** nur auf dem Server: `/etc/balki/env` (root, Rechte 600) und über `EnvironmentFile=` an den Dienst. Nie im Repo, nie im Browser. Einen eigenen Key in einem eigenen Workspace mit **Ausgabenlimit** in der Anthropic-Konsole anlegen.
-- **Nur Kennungen und Zahlen** gehen an die API: Wand-ID, Balkon-Nummer, vier Pixelwerte, Geländerart aus einer festen Liste. Kein Freitext. Damit gibt es keinen Weg, eigene Inhalte an das Sprachmodell zu schicken (keine Prompt-Injection), und die Antwort des Modells wird nur als strukturierte Boxen übernommen und auf Plausibilität geprüft.
-- **Limits:** je IP 6 Analysen/Stunde, 30 Angebote/Stunde, 120 Lesezugriffe/Minute; dazu ein Tagesbudget für alle zusammen (`ANALYSEN_PRO_TAG`, Standard 300). Zusätzlich Caddy-Ratenlimit vor der App.
-- **Bot-Schutz** vor der Analyse, sobald öffentlich: Friendly Captcha (deutscher Anbieter, ohne Cookies) oder Cloudflare Turnstile. Erst einbauen, wenn die Limits tatsächlich erreicht werden.
-- **Eingaben:** JSON-Bodies höchstens 2 KB, strikte Typprüfung, Rechteck muss innerhalb der Wand liegen, Breite 0,8–12 m. Fehlertexte ohne technische Details.
-- **Dateien:** statisch nur aus `webapp/`, keine versteckten oder `_`-Pfade (Caches), kein Verzeichnislisting. Die App läuft als eigener Nutzer ohne Login-Shell; schreiben darf sie nur in `webapp/angebot/` und `webapp/_cache/`.
-- **Server:** nur Ports 22/80/443 offen (ufw), SSH nur mit Schlüssel, `unattended-upgrades`, fail2ban. Tägliches verschlüsseltes Backup (restic auf eine Hetzner Storage Box) von Angeboten, Caches und später der Datenbank.
-- **Internes Tool** (`intern.html`): per Basic-Auth in Caddy schützen oder gar nicht ausliefern.
-
-## Datenbank
-
-Für den Start reichen die JSON-Caches (`_cache/balkone_live.json`, `_cache/balkone_nutzer.json`) – schnell, einfach zu sichern. Sobald mehr als ein Kiez dazukommt:
-
-- **PostgreSQL + PostGIS** (oder SQLite für einen Kiez): Tabellen `adressen` (für ganz Berlin ca. 400 000, mit Volltext- und Geo-Index), `fassaden`, `balkone` (Quelle: erkannt / selbst eingezeichnet), `angebote`.
-- Das Projekt speichert keine Kontaktdaten. Wände, Balkone und Erträge enthalten keine Personendaten; eingezeichnete Balkone sind an eine Adresse gebunden und werden in der Datenschutzerklärung mit Löschfrist beschrieben.
-
-## SEO
-
-- Die Startseite ist fertiges HTML mit Überschriften, Tabelle und FAQ (schema.org `FAQPage`, `WebApplication`). Karte und Daten werden erst geladen, wenn man hinscrollt oder sucht – die Seite ist dadurch schnell (gute Core Web Vitals).
-- Später **eine Seite je Kiez** („Balkonkraftwerk Schöneberg: so viel Sonne haben die Balkone“) mit echten Kennzahlen aus der Pipeline, dazu `sitemap.xml`, `canonical` mit der echten Domain und Google Search Console.
-- Angebotsseiten, API und internes Tool sind per `robots.txt` und `noindex` ausgeschlossen (gehören zu einzelnen Haushalten und sollen nicht in der Suche auftauchen).
-
-## Datenschutz (vor dem Start erledigen)
-
-- **Schriften selbst hosten.** Die Seiten laden Bricolage Grotesque, Figtree und Caveat derzeit von Google Fonts. Das überträgt IP-Adressen an Google (LG München, 2022). Die Dateien liegen unter freier Lizenz (OFL) und können einfach in `webapp/fonts/` abgelegt werden.
-- Keine Cookies, kein Tracking. Für Reichweite höchstens cookielose Statistik (Plausible oder Matomo ohne Cookies, selbst gehostet).
-- Server-Logs: Caddy so einstellen, dass IPs gekürzt werden, 7 Tage aufbewahren. Die App selbst schreibt keine IPs (Ratenlimit nur im Speicher).
-- Impressum, Datenschutzerklärung, AV-Vertrag mit Hetzner. Anthropic als Auftragsverarbeiter nennen; es gehen nur Fassadenbilder aus dem 3D-Modell dorthin, keine Nutzerdaten.
-- Nutzung des Berliner 3D-Meshs für ein kommerzielles Angebot vorab mit der Senatsverwaltung (Geoportal Berlin / 3D-Stadtmodell) klären.
-
-## Beispiel-Konfiguration
-
-`/etc/caddy/Caddyfile` (geprüft mit Caddy 2.8: `_cache/`, versteckte Dateien und Hilfsdateien liefern 404)
-```
+```json
 {
-    servers {
-        timeouts {
-            read_header 5s
-            read_body 10s
-            write 60s
-            idle 60s
-        }
+  "version": 1,
+  "crs": "EPSG:25833",
+  "kacheln": [
+    {
+      "id": "3858_58171",
+      "name": "Wilmersdorf",
+      "bounds": [385848.0, 5817143.6, 386226.2, 5817517.4],
+      "url": "tiles/3858_58171/",
+      "meta": "tiles/3858_58171/meta.json"
     }
-}
-
-balki-strom.example {
-    encode zstd gzip
-    root * /srv/balki/webapp
-
-    # Reihenfolge ist wichtig: in Caddy laufen "handle"-Blöcke vor "respond".
-    # Deshalb die Sperre als eigener handle-Block VOR dem file_server.
-    @versteckt path /_cache /_cache/* /.* */.* *.command *.py *.csv /intern.html
-    handle @versteckt {
-        respond 404
-    }
-
-    handle /api/* {
-        request_body {
-            max_size 4KB
-        }
-        reverse_proxy 127.0.0.1:8000 {
-            header_up X-Forwarded-For {remote_host}
-            transport http {
-                response_header_timeout 120s
-            }
-        }
-    }
-
-    handle {
-        file_server {
-            hide .* _* *.command *.py *.csv
-        }
-    }
-
-    header {
-        Strict-Transport-Security "max-age=31536000"
-        X-Content-Type-Options nosniff
-        X-Frame-Options DENY
-        Referrer-Policy strict-origin-when-cross-origin
-        Permissions-Policy "geolocation=(), camera=(), microphone=()"
-        -Server
-    }
-    header /angebot/* X-Robots-Tag noindex
-
-    log {
-        output file /var/log/caddy/balki.log {
-            roll_keep_for 168h
-        }
-        format filter {
-            request>remote_ip ip_mask 16 32
-        }
-    }
+  ]
 }
 ```
+Das Format von `meta.json` und den Zellen bestimmt allein `pipeline/kachel.py` + `web/js/viewer.js`.
 
-Hinweise:
-- Die App immer mit `--hinter-proxy` starten (sonst teilen sich alle Nutzer ein Limit, weil jede Anfrage von 127.0.0.1 kommt).
-- Besser als Sperrregeln: nur die Dateien ins Webroot kopieren, die ausgeliefert werden sollen (`index.html`, `data.js`, Bilder, `angebot/`), und `intern.html` nicht auf den Server legen.
-- Caddy hat kein eingebautes Ratenlimit. Die App begrenzt selbst (je IPv4-Adresse bzw. IPv6-/64-Netz, gleichzeitige Verbindungen, Warteschlange der Rechnungen). Für mehr Schutz das Modul `caddy-ratelimit` einbauen.
-- Kein `.env` unter `/srv/balki` ablegen; der Key kommt nur über `EnvironmentFile`.
+### `web/js/viewer.js` (ES-Modul)
 
-`/etc/systemd/system/balki.service`
-```
-[Unit]
-Description=balki strom API
-After=network.target
+```js
+import { erstelleViewer, ViewerNichtVerfuegbar } from './viewer.js';
 
-[Service]
-User=balki
-WorkingDirectory=/srv/balki
-EnvironmentFile=/etc/balki/env
-ExecStart=/srv/balki/.venv/bin/python server/app.py data/3858_58171_-002 webapp --port 8000 --hinter-proxy
-Restart=on-failure
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=true
-PrivateTmp=true
-PrivateDevices=true
-ProtectKernelTunables=true
-ProtectKernelModules=true
-ProtectKernelLogs=true
-ProtectProc=invisible
-LockPersonality=true
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-CapabilityBoundingSet=
-SystemCallFilter=@system-service
-UMask=0077
-ReadWritePaths=/srv/balki/webapp/angebot /srv/balki/webapp/_cache
-MemoryMax=3G
-TasksMax=256
-LimitNOFILE=1024
+const viewer = await erstelleViewer(containerElement, { manifest: 'tiles/tiles.json', qualitaet: 'auto' });
+// qualitaet: 'auto' | 'niedrig' | 'hoch'; wirft ViewerNichtVerfuegbar, wenn kein WebGL
 
-[Install]
-WantedBy=multi-user.target
+viewer.zeigeOrt(x, y);              // Kamera auf das Haus an dieser Adresse, bevorzugt von der Sonnenseite
+viewer.beiAuswahl(cb);              // cb({kachel, x, y, z, nx, ny, nz}) beim Tippen auf eine Hauswand/einen Balkon
+                                    // (Dach/Boden/Baum werden nicht gemeldet; Normale = Flächennormale, Einheitsvektor)
+viewer.zeigeMarker(x, y, z | null); // Markierung am getippten Punkt (null = weg)
+viewer.zeigeModule(module | null);  // module: [[[x,y,z] × 4 Ecken], ...] in EPSG:25833 – Solarmodule einblenden
+viewer.setzeSonne(date);            // Sonnenstand (Berlin) für Datum/Uhrzeit, mit Schatten
+viewer.beiStatus(cb);               // cb({ladend: bool, fortschritt: 0..1, text}) für Ladeanzeige
+
+// Balkon als Rahmen aufziehen (Standard nach zeigeOrt):
+viewer.setzeModus('rahmen' | 'drehen');   // 'rahmen': ein Finger/linke Maustaste zieht einen Rahmen auf der Wand,
+                                          // zwei Finger/rechte Maustaste/Mausrad bewegen weiter die Ansicht;
+                                          // 'drehen': wie bisher (ein Finger dreht). Kurzes Tippen = beiAuswahl in beiden Modi.
+viewer.beiRahmen(cb);               // cb({kachel, x, y, z, nx, ny, nz, breite_m, hoehe_m, a:[x,y,z], b:[x,y,z]})
+                                    // x/y/z = Mitte der Rahmen-Unterkante auf der Wand, breite_m entlang der Wand
+viewer.zeigeRahmen(rahmen | null);  // aufgezogenen Rahmen (a, b, nx, ny) weiter anzeigen bzw. entfernen
+
+// Sonnenverlauf mit Schatten (auch auf 'niedrig': dann günstige Schatten nur im Nahbereich, solange aktiv):
+viewer.spieleSonne({tag: Date, von: 6, bis: 21, dauer_s: 8, beiZeit: cb(date)}); // -> {stopp()}
+viewer.setzeSonne(date | null);     // null = Sonnenansicht beenden (Schatten auf 'niedrig' wieder aus)
+viewer.entsorge();
 ```
 
-## Nächste Ausbaustufen
+### `POST /api/ertrag` (Server)
 
-1. Schriften lokal, Impressum/Datenschutz.
-2. Adressen für ganz Berlin in die Datenbank, Suche über einen kleinen `/api/adresse?q=`-Endpunkt (dann nicht mehr als Datei im Browser).
-3. Pipeline für weitere Kacheln; der Rechner lädt die Kachel einer Wand bei Bedarf (LRU-Cache im Speicher).
-4. Bei mehr Last: `server/app.py` auf FastAPI + uvicorn umstellen (gleiche Endpunkte), Rechnung in einen Worker mit Warteschlange.
+Anfrage (JSON, höchstens 1 KB):
+```json
+{ "kachel": "3858_58171", "x": 386001.2, "y": 5817300.4, "z": 52.3, "nx": 0.02, "ny": -0.99,
+  "module": 2, "aufstellung": "senkrecht" }
+```
+`module`: 1 oder 2, optional – fehlt es und ist `breite_m` gesetzt, wählt der Server 1 oder 2 nach der Breite.
+`breite_m` (optional, 0,5–15): Breite des aufgezogenen Rahmens. `aufstellung`: `"senkrecht"` (am Geländer) oder
+`"geneigt"` (30° ausgestellt). Die Antwort enthält dann `modul.balkon_breite_m` und `modul.passen`
+(Zahl der 1,72-m-Standardmodule, die in die Breite passen).
+
+Antwort 200:
+```json
+{
+  "ok": true,
+  "kachel": "3858_58171",
+  "azimut": 182.4, "richtung": "Süd",
+  "hoehe_ueber_boden_m": 9.8, "geschoss": 3,
+  "module": [[[x, y, z], [x, y, z], [x, y, z], [x, y, z]], ...],
+  "modul": {"anzahl": 2, "wp_je_modul": 430, "wp": 860, "breite_m": 1.72, "hoehe_m": 1.13},
+  "kwh_jahr": 512.3, "kwh_jahr_frei": 640.0, "verschattung": 0.2,
+  "monat_kwh": [12 Werte],
+  "stunde_wh": [8760 Werte, Wechselrichter-Ausgang, Jahr 2025, Europe/Berlin],
+  "sonnenstunden": 1234, "sonnenstunden_frei": 1600,
+  "horizont": {"schritt_grad": 2, "gebaeude": [180 Werte], "baeume": [180 Werte]},
+  "rand": false,
+  "hinweise": ["…"],
+  "wetter": "…", "annahmen": {…}
+}
+```
+Fehler: `400 {"ok": false, "fehler": "<verständlicher deutscher Satz>"}`, `429` (zu viele Anfragen),
+`503` (ausgelastet). Fehlertexte enthalten nie technische Details.
+
+### Wirtschaftlichkeit (Browser, `web/js/ergebnis.js` + `lastgang.js` + `params.js`)
+
+`stunde_wh` → minutengenauer Eigenverbrauch mit dem Haushaltsmodell aus `lastgang.js` → € pro Jahr,
+Kosten des Sets (Richtwert-Spanne), Amortisation. Alle Annahmen sichtbar und änderbar
+(Strompreis, Haushaltsgröße, tagsüber zu Hause).
+
+## Schatten über den Kachelrand hinaus
+
+Der Horizont reicht 220 m weit, eine Kachel ist nur ~380 m breit. Für Punkte außerhalb der Mesh-Kachel
+nimmt die Pipeline LoD2-Gebäude und bDOM-Bäume (offene Daten, gdi.berlin.de, Datenlizenz Deutschland
+– Zero 2.0) als Ersatz. Liegen Nachbarkacheln als Mesh vor, gehen sie vor.
+
+## Datenschutz und Sicherheit (Kurzfassung)
+
+- Keine Cookies, kein Tracking, keine externen Ressourcen (Schriften, three.js selbst gehostet).
+- Adresssuche läuft vollständig im Browser; der Server sieht nur Koordinaten des getippten Punktes.
+- Die E-Mail an den Vermieter wird im Browser erzeugt (`mailto:` / Kopieren) – nichts davon erreicht
+  den Server.
+- Server: strenge Eingabeprüfung, Ratenlimit je IP im Speicher, keine IPs in Logs der App.
+- Hosting-Beispiel (Caddy + systemd) siehe Git-Historie dieser Datei (Stand Oktober 2026).

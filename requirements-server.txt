@@ -1,0 +1,6 @@
+# Nur was der Webserver (server/app.py) braucht – für den Betrieb, Versionen fest.
+# Die Pipeline (pipeline/*.py) braucht zusätzlich requirements.txt.
+numpy==2.5.3
+pandas==3.0.5
+pvlib==0.16.1
+pyproj==3.8.0

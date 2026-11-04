@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-kaEog0AsPo4/9apXRMvp5eF3zpfBg9ltlJNNm2KUPio='; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Balkonkraftwerk-Simulator für Berlin | balki strom</title>
+<meta name="description" content="Balkonkraftwerk-Simulator für Berlin: Ertrag, Schatten und Kosten für deinen Balkon, berechnet im 3D-Stadtmodell. Mit Schritten zu Zustimmung, Kauf, Montage und Anmeldung. Kostenlos, ohne Anmeldung, Open Source.">
+<meta name="theme-color" content="#F2F5FA">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="fonts/figtree-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/sora-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/app.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/"}}</script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
+
+<header class="kopf">
+  <a class="logo" href="./"><img src="bilder/logo.svg" alt="balki strom, zur Startseite" width="174" height="32"></a>
+  <nav class="kopf-nav" aria-label="Projekt und Autor">
+    <a class="kopf-link" href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 16 16" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span class="kopf-text">Quellcode<span class="sr"> von balki strom auf GitHub</span></span>
+    </a>
+    <a class="kopf-link kopf-autor" href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer"><span class="sr">Autor Jan-Hendrik Höltkemeier auf GitHub: </span>@janhh011</a>
+    <a class="kopf-link kopf-icon" href="https://www.linkedin.com/in/jan-hendrik-h%C3%B6ltkemeier/" target="_blank" rel="noopener noreferrer" aria-label="Jan-Hendrik Höltkemeier auf LinkedIn">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M5 2h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3ZM6.4 9.6h2.8V18H6.4ZM7.8 5.5a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2ZM11 9.6h2.7v1.2c.5-.9 1.5-1.4 2.7-1.4 2.3 0 3.2 1.4 3.2 3.8V18h-2.8v-4.3c0-1.2-.3-2-1.4-2-1.2 0-1.6.9-1.6 2V18H11Z"/></svg>
+    </a>
+  </nav>
+</header>
+
+<main id="inhalt">
+  <!-- 1. Adresse -->
+  <section class="start" id="start" aria-labelledby="start-titel">
+    <div class="start-in">
+      <h1 id="start-titel">Balkonkraftwerk-Simulator für Berlin</h1>
+      <ul class="vertrauen" aria-label="Über balki strom">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Kostenlos</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ohne Anmeldung</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Open Source</a></li>
+      </ul>
+      <p class="lead">Ertrag, Schatten und Kosten für deinen Balkon, berechnet im 3D-Stadtmodell. Adresse eingeben, auf den Balkon tippen, Ergebnis sehen.</p>
+      <form class="suche" id="suche" role="search" autocomplete="off" novalidate>
+        <label for="adresse" class="suche-label">Deine Adresse</label>
+        <div class="suche-feld">
+          <svg class="suche-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+          <input id="adresse" type="text" inputmode="search" enterkeyhint="search" spellcheck="false" autocapitalize="off"
+                 placeholder="z. B. Emser Str. 2" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                 aria-controls="vorschlaege" aria-describedby="suche-hilfe">
+          <button class="btn" type="submit">Los</button>
+        </div>
+        <ul id="vorschlaege" class="vorschlaege" role="listbox" aria-label="Adressvorschläge" hidden></ul>
+        <p id="suche-hilfe" class="suche-hilfe">Straße und Hausnummer genügen. Die Suche läuft nur in deinem Browser.</p>
+        <p id="suche-status" class="sr" aria-live="polite"></p>
+      </form>
+      <p class="gebiet" id="gebiet"></p>
+      <aside class="hinweis-nkz" aria-label="Aktion im Zentrum Kreuzberg">
+        <b>Zentrum Kreuzberg: 60 Balkonkraftwerke für Mieter*innen</b>
+        Mieter*innen im Zentrum Kreuzberg können sich bis 01.12.2026 für ein kostenloses Balkonkraftwerk bewerben.
+        <a href="https://planb2030.org/nkz" target="_blank" rel="noopener noreferrer">Mehr bei Plan B 2030</a>
+      </aside>
+    </div>
+  </section>
+
+  <div class="arbeit" id="arbeit" hidden>
+    <!-- 2. Haus in 3D -->
+    <section class="haus" id="haus" aria-labelledby="haus-titel">
+      <div class="haus-kopf">
+        <div>
+          <p class="label" id="haus-adresse"></p>
+          <h2 id="haus-titel" tabindex="-1">Markiere deinen Balkon</h2>
+        </div>
+        <button class="link" type="button" id="andere-adresse">Andere Adresse</button>
+      </div>
+      <div class="viewer-rahmen">
+        <div class="viewer" id="viewer"></div>
+        <div class="viewer-laden" id="viewer-laden" hidden>
+          <p id="viewer-ladetext">Lade dein Haus …</p>
+          <div class="fortschritt" role="progressbar" aria-labelledby="viewer-ladetext" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="viewer-balken"></span></div>
+        </div>
+        <p class="viewer-tipp" id="viewer-tipp" hidden>Dreh das Haus mit einem Finger, zoom mit zwei. Dann tipp auf deinen Balkon.</p>
+        <div class="rahmen-hilfe" id="rahmen-hilfe" hidden>
+          <svg viewBox="0 0 96 64" width="72" height="48" aria-hidden="true" focusable="false">
+            <rect x="4" y="8" width="88" height="48" rx="4" fill="#fff" fill-opacity=".85"/>
+            <path d="M14 46h68" stroke="#8C99AA" stroke-width="3" stroke-linecap="round"/>
+            <rect class="rh-rahmen" x="18" y="22" width="56" height="22" rx="2" fill="#2E6BF0" fill-opacity=".18" stroke="#2E6BF0" stroke-width="2"/>
+            <g class="rh-finger"><circle cx="74" cy="44" r="6" fill="#13243A" fill-opacity=".85"/><circle cx="74" cy="44" r="9" fill="none" stroke="#13243A" stroke-opacity=".3" stroke-width="2"/></g>
+          </svg>
+          <p>Zieh einen Rahmen über die Breite deines Balkons</p>
+        </div>
+        <p class="viewer-meldung" id="viewer-meldung" role="status" hidden></p>
+      </div>
+      <div class="modus-zeile" id="modus-zeile" hidden>
+        <div class="seg seg-klein" role="radiogroup" aria-label="Was macht ein Finger im 3D-Bild?">
+          <label><input type="radio" name="modus" value="rahmen" checked><span>Rahmen ziehen</span></label>
+          <label><input type="radio" name="modus" value="drehen"><span>Ansicht drehen</span></label>
+        </div>
+        <p class="klein modus-tipp" id="modus-tipp"></p>
+      </div>
+      <p class="viewer-hinweis" id="viewer-hinweis" role="status" hidden></p>
+      <section class="sonne" id="sonne" hidden aria-labelledby="sonne-titel">
+        <h3 id="sonne-titel">Sonne und Schatten an deinem Balkon</h3>
+        <div class="seg seg-klein sonne-tage" role="radiogroup" aria-label="Tag im Jahr">
+          <label><input type="radio" name="sonnentag" value="5" checked><span>21. Juni</span></label>
+          <label><input type="radio" name="sonnentag" value="2"><span>21. März</span></label>
+          <label><input type="radio" name="sonnentag" value="11"><span>21. Dezember</span></label>
+        </div>
+        <div class="sonne-zeile">
+          <button class="sonne-play" type="button" id="sonne-play" aria-label="Sonnenverlauf abspielen">
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path class="i-play" d="M8 5.5v13l10-6.5z" fill="currentColor"/><path class="i-pause" d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          </button>
+          <div class="sonne-regler">
+            <label for="sonne-zeit" class="label">Uhrzeit <output id="sonne-uhr" for="sonne-zeit">13:00</output></label>
+            <input type="range" id="sonne-zeit" min="300" max="1320" step="5" value="780" aria-valuetext="13:00 Uhr">
+          </div>
+        </div>
+        <p class="sonne-live" id="sonne-live" aria-live="polite"><span id="sonne-leistung"></span><span id="sonne-status"></span></p>
+        <p class="klein">Leistung: Mittel aus den Tagen rund um das gewählte Datum im Wetterjahr der Rechnung. Schatten: Häuser und Bäume aus dem 3D-Modell.</p>
+      </section>
+      <div class="ohne3d" id="ohne3d" hidden>
+        <h3 id="ohne3d-titel">Die 3D-Ansicht geht hier leider nicht</h3>
+        <p id="ohne3d-text">Eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?</p>
+        <div class="chips" role="radiogroup" aria-labelledby="ohne3d-titel" id="richtungen"></div>
+      </div>
+      <p class="haus-fuss"><button class="link" type="button" id="ohne3d-link">Ohne 3D-Ansicht grob schätzen</button></p>
+    </section>
+
+    <!-- 3. Ergebnis -->
+    <section class="ergebnis" id="ergebnis" aria-labelledby="ergebnis-titel">
+      <div class="karte warten" data-e="warten">
+        <p class="label">So geht's</p>
+        <p class="warten-text" id="warten-text">Such im Bild deinen Balkon und zieh einen Rahmen über seine Breite. Dann werden Sonne und Schatten für genau diese Stelle durchgerechnet.</p>
+      </div>
+      <div class="karte laden" data-e="laden" hidden role="status">
+        <span class="spinner" aria-hidden="true"></span><span data-e="ladetext">Wird gerechnet …</span>
+      </div>
+      <div class="karte fehler" data-e="fehler" hidden role="alert">
+        <p data-e="fehlertext"></p>
+        <button class="btn btn-zweit" type="button" id="nochmal">Noch einmal versuchen</button>
+      </div>
+      <div data-e="inhalt" hidden>
+        <div class="karte ergebnis-karte">
+          <p class="sr" aria-live="polite" aria-atomic="true" data-e="ansage"></p>
+          <div class="ek-kopf">
+            <h2 id="ergebnis-titel" tabindex="-1">Dein Balkon</h2>
+            <span class="tag tag-sonne" data-e="richtung"></span>
+          </div>
+          <p class="ek-ort" data-e="ort"></p>
+          <p class="ek-breite" data-e="breite" hidden></p>
+          <p class="ek-zahl"><span class="kpi" data-e="spar"></span> <span class="ek-zahl-text" data-e="spartext">Ersparnis pro Jahr</span></p>
+          <div class="ek-balken" aria-hidden="true"><span data-e="balken"></span></div>
+          <p class="klein ek-quote" data-e="quote"></p>
+          <dl class="ek-stats" data-e="kpis"></dl>
+          <p class="ek-tags" data-e="tags"></p>
+          <p class="ek-kosten" data-e="kosten"></p>
+          <p class="ek-unter" data-e="unter" hidden></p>
+          <a class="btn btn-voll" href="#schritte">Nächste Schritte</a>
+          <p class="ek-link"><a href="#rechnung" id="link-rechnung">Rechenweg und Annahmen&nbsp;→</a></p>
+        </div>
+        <p class="lang" data-e="lang"></p>
+        <ul class="hinweise" data-e="hinweise" hidden></ul>
+
+        <fieldset class="wahl">
+          <legend>Deine Ausstattung</legend>
+          <div class="wahl-zeile">
+            <span class="wahl-name" id="w-module">Module</span>
+            <div class="seg" role="radiogroup" aria-labelledby="w-module">
+              <label><input type="radio" name="module" value="1"><span>1 Modul</span></label>
+              <label><input type="radio" name="module" value="2"><span>2 Module</span></label>
+            </div>
+          </div>
+          <div class="wahl-zeile">
+            <span class="wahl-name" id="w-aufst">Montage</span>
+            <div class="seg" role="radiogroup" aria-labelledby="w-aufst">
+              <label><input type="radio" name="aufstellung" value="senkrecht"><span>senkrecht</span></label>
+              <label><input type="radio" name="aufstellung" value="geneigt"><span>geneigt</span></label>
+            </div>
+          </div>
+          <p class="klein">Geneigt (30° ausgestellt) bringt meist mehr Strom, braucht aber eine passende Halterung.</p>
+        </fieldset>
+
+        <figure class="monate">
+          <figcaption class="label">Strom je Monat (kWh)</figcaption>
+          <svg data-e="monate" viewBox="0 0 336 132" role="img"></svg>
+        </figure>
+
+        <details class="rechnung" id="rechnung">
+          <summary>Rechenweg und Annahmen</summary>
+          <div class="rechnung-in">
+            <div class="feld">
+              <label for="preis">Dein Strompreis</label>
+              <div class="preis-zeile"><input id="preis" type="number" inputmode="decimal" min="15" max="80" step="0.5"> <span>ct pro kWh</span></div>
+              <p class="klein">Arbeitspreis laut Stromrechnung, ohne Grundgebühr.</p>
+            </div>
+            <div class="feld">
+              <span class="feld-name" id="w-pers">Personen im Haushalt</span>
+              <div class="seg" role="radiogroup" aria-labelledby="w-pers" id="personen"></div>
+            </div>
+            <div class="feld">
+              <span class="feld-name" id="w-da">Tagsüber zu Hause</span>
+              <div class="seg" role="radiogroup" aria-labelledby="w-da" id="zuhause"></div>
+              <p class="klein">Wer mittags zu Hause ist, nutzt mehr Sonnenstrom selbst.</p>
+            </div>
+            <dl class="annahmen" data-e="annahmen"></dl>
+            <p class="klein" data-e="wetter"></p>
+            <p class="klein">Hier wird nichts verkauft, und es gibt keine Provision. Alle Werte sind Schätzungen, keine Zusage.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <!-- 4. Schritte -->
+  <section class="schritte" id="schritte" aria-labelledby="schritte-titel">
+    <div class="schritte-in">
+      <h2 id="schritte-titel">Schritte zum eigenen Balkonkraftwerk</h2>
+      <p class="lead">Fünf Schritte, insgesamt etwa zwei Stunden Aufwand. Die meiste Zeit wartest du auf Antwort und Lieferung.</p>
+      <ol class="liste-schritte">
+        <li class="schritt">
+          <div class="schritt-kopf"><h3>Zustimmung einholen</h3><span class="dauer">10 Minuten</span></div>
+          <h4 class="fall">Wenn du zur Miete wohnst</h4>
+          <p>Seit Oktober 2024 hast du einen Anspruch auf Zustimmung (§&nbsp;554 BGB, „privilegierte bauliche Veränderung“). Ablehnen darf die Vermieterseite nur aus gewichtigen Gründen. Mitreden, <em>wie</em> und <em>wo</em> montiert wird, darf sie aber. Frag am besten schriftlich, bevor du kaufst. Diese E-Mail ist schon vorbereitet:</p>
+          <div class="mail">
+            <div class="mail-felder">
+              <div class="feld"><label for="mail-name">Dein Name</label><input id="mail-name" type="text" autocomplete="name"></div>
+              <div class="feld"><label for="mail-wohnung">Wohnung <span class="klein">(optional)</span></label><input id="mail-wohnung" type="text" placeholder="z. B. 3. OG links"></div>
+            </div>
+            <p class="mail-betreff"><span class="label">Betreff</span> <span id="mail-betreff"></span></p>
+            <label for="mail-text" class="label">Deine E-Mail (du kannst alles ändern)</label>
+            <textarea id="mail-text" rows="14" spellcheck="true"></textarea>
+            <p class="klein"><button class="link" type="button" id="mail-neu" hidden>Text neu erzeugen</button></p>
+            <div class="aktionen">
+              <button class="btn" type="button" id="mail-oeffnen">In E-Mail-Programm öffnen</button>
+              <button class="btn btn-zweit" type="button" id="mail-kopieren">Text kopieren</button>
+            </div>
+            <p class="klein" id="mail-status" role="status"></p>
+            <p class="klein">Die E-Mail entsteht nur in deinem Browser. Diese Seite sieht und speichert nichts davon.</p>
+          </div>
+          <h4 class="fall">Wenn dir die Wohnung gehört</h4>
+          <p>In einer Eigentümergemeinschaft brauchst du einen Beschluss der Gemeinschaft. Seit Oktober 2024 kannst du ihn verlangen: Steckersolargeräte sind eine privilegierte bauliche Veränderung (§&nbsp;20 Abs.&nbsp;2 WEG). Über das <em>Wie</em>, etwa Ort und Befestigung, entscheidet die Gemeinschaft mit. Sprich am besten zuerst mit der Hausverwaltung und lass es vor der Montage auf die Tagesordnung der Eigentümerversammlung setzen.</p>
+          <p class="klein">Gehört dir das ganze Haus, musst du niemanden fragen.</p>
+        </li>
+        <li class="schritt">
+          <div class="schritt-kopf"><h3>Set aussuchen und kaufen</h3><span class="dauer">20 Minuten</span></div>
+          <p>Im Baumarkt, Fachhandel oder online. Ein Set mit Halterung kostet meist 250 bis 500 €. Seit 2023 fällt darauf keine Mehrwertsteuer an. Darauf kannst du achten:</p>
+          <ul class="haken">
+            <li>Wechselrichter mit höchstens <b>800 Watt</b>. Das ist die Grenze für Balkonkraftwerke.</li>
+            <li>Module, die auf dein Geländer passen. Ein Modul ist etwa so groß wie eine Tür, quer gelegt. Miss vorher die Breite deines Geländers.</li>
+            <li>Eine <b>Halterung für dein Geländer</b> (Material, Stärke), am besten zum Klemmen ohne Bohren.</li>
+            <li>Ein Kabel, das bis zur nächsten Steckdose reicht, ohne Mehrfachstecker oder Kabeltrommel.</li>
+            <li>Ein Datenblatt mit Modul- und Wechselrichterleistung. Das brauchst du für die Anmeldung.</li>
+          </ul>
+        </li>
+        <li class="schritt">
+          <div class="schritt-kopf"><h3>Montieren</h3><span class="dauer">etwa 1 Stunde</span></div>
+          <p>Zu zweit geht es leichter: Halterung ans Geländer, Module einhängen und festschrauben, Wechselrichter anschließen, Stecker rein, fertig.</p>
+          <ul class="haken">
+            <li>Module sind groß und schwer: immer zu zweit tragen und von innen sichern.</li>
+            <li>Alles sturmfest nach Anleitung festziehen; nichts darf herunterfallen.</li>
+            <li>Erst die Module verbinden, den Stecker zuletzt in die Steckdose.</li>
+            <li>Unsicher, ob Steckdose oder Leitung passen? Frag eine Elektrofachkraft.</li>
+          </ul>
+        </li>
+        <li class="schritt">
+          <div class="schritt-kopf"><h3>Im Marktstammdatenregister anmelden</h3><span class="dauer">10 bis 15 Minuten</span></div>
+          <p>Pflicht, kostenlos und online: innerhalb eines Monats, nachdem dein Balkonkraftwerk zum ersten Mal Strom macht. Eine eigene Anmeldung beim Netzbetreiber brauchst du nicht mehr. Er bekommt die Daten aus dem Register.</p>
+          <ol class="unter">
+            <li>Auf <a href="https://www.marktstammdatenregister.de" target="_blank" rel="noopener noreferrer">marktstammdatenregister.de</a> ein Benutzerkonto anlegen (E-Mail genügt).</li>
+            <li>„Anlage registrieren“ wählen und dort <b>Steckersolargerät</b>. Das ist die vereinfachte Anmeldung.</li>
+            <li>Diese Angaben eintragen:</li>
+          </ol>
+          <dl class="mastr">
+            <dt>Standort</dt><dd>deine Adresse</dd>
+            <dt>Datum der Inbetriebnahme</dt><dd>der Tag, an dem du den Stecker zum ersten Mal einsteckst</dd>
+            <dt>Modulleistung in Wp</dt><dd>steht auf dem Datenblatt oder Typenschild der Module</dd>
+            <dt>Wechselrichterleistung in W</dt><dd>steht auf dem Datenblatt oder Typenschild des Wechselrichters</dd>
+            <dt>Zählernummer</dt><dd>steht auf deinem Stromzähler</dd>
+          </dl>
+          <p class="klein">Zähler: Hast du noch einen alten Zähler mit Drehscheibe, darfst du trotzdem schon loslegen. Falls nötig, tauscht der Messstellenbetreiber ihn aus und meldet sich dafür bei dir.</p>
+        </li>
+        <li class="schritt">
+          <div class="schritt-kopf"><h3>Hilfe vor Ort holen</h3><span class="dauer">wenn du magst</span></div>
+          <ul class="hilfe">
+            <li><b>Zentrum Kreuzberg:</b> Das Bezirksamt Friedrichshain-Kreuzberg und Plan B 2030 e.V. schenken Mieter*innen dort 60 Balkonkraftwerke. Bewerben bis 01.12.2026: <a href="https://planb2030.org/nkz" target="_blank" rel="noopener noreferrer">planb2030.org/nkz</a></li>
+            <li><b>Solarbotschafter*innen:</b> Nachbar*innen, die ab Dezember 2026 geschult werden und dir beim Start helfen: <a href="https://planb2030.org/solarbotschafter" target="_blank" rel="noopener noreferrer">planb2030.org/solarbotschafter</a></li>
+            <li><b>Bezirksamt:</b> <a href="https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/service-und-organisationseinheiten/klima-und-internationales/balkonkraftwerke-f-r-mieter-innen-1731789.php" target="_blank" rel="noopener noreferrer">Balkonkraftwerke für Mieter*innen</a></li>
+            <li><b>Unabhängige Beratung:</b> <a href="https://www.verbraucherzentrale-berlin.de" target="_blank" rel="noopener noreferrer">Energieberatung der Verbraucherzentrale Berlin</a></li>
+          </ul>
+        </li>
+      </ol>
+          </div>
+  </section>
+</main>
+
+<footer class="fuss">
+  <div class="fuss-in">
+    <img class="fuss-logo" src="bilder/logo-dunkel.svg" alt="balki strom" width="174" height="32">
+    <h2 class="sr">Über das Projekt</h2>
+    <p class="fuss-claim">Kostenlos · Ohne&nbsp;Anmeldung · Open&nbsp;Source (AGPL-3.0)</p>
+    <p class="fuss-text">Ein nicht kommerzielles Projekt von <a href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer">Jan-Hendrik Höltkemeier</a>. Kein Verkauf, keine Provision, keine Cookies, kein Tracking. Alle Werte sind Schätzungen.</p>
+    <p class="fuss-person">Kontakt zum Autor: <a href="https://www.linkedin.com/in/jan-hendrik-h%C3%B6ltkemeier/" target="_blank" rel="noopener noreferrer">LinkedIn</a> · <a href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    <nav aria-label="Rechtliches und Projekt">
+      <ul class="fuss-nav">
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+        <li><a href="barrierefreiheit.html">Barrierefreiheit</a></li>
+        <li><a href="lizenzen.html">Lizenzen &amp; Datenquellen</a></li>
+        <li><a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Quellcode (GitHub)</a></li>
+      </ul>
+    </nav>
+    <p class="klein fuss-daten">Daten: 3D-Stadtmodell (Mesh) © Land Berlin, Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen, Berlin 3D-Downloadportal, nicht kommerzielle Nutzung. Hauskoordinaten, LoD2-Gebäude, Oberflächenmodell: Geoportal Berlin, Datenlizenz Deutschland Zero, Version 2.0. Details unter <a href="lizenzen.html">Lizenzen &amp; Datenquellen</a>.</p>
+  </div>
+</footer>
+</body>
+</html>
