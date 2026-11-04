@@ -1,69 +1,63 @@
 # Backlog
 
-Stand: 23.10.2026. Quelle: Review (Sicherheit, Architektur, Robustheit/Datenschutz). Bereits erledigt ist unten aufgeführt.
+Stand: 04.11.2026 · Mesh-Version. Offene Punkte, Ideen und bekannte Grenzen an einer Stelle.
+Erledigtes steht in der Git-Historie. Größere Punkte werden bei Bedarf als GitHub-Issue angelegt
+und hier verlinkt.
+
+**Priorität:** P1 = vor dem öffentlichen Start · P2 = bald danach · P3 = Idee / später
+**Aufwand:** S = Stunden · M = 1–2 Tage · L = mehrere Tage
 
 ## Vor dem öffentlichen Start
 
-- [ ] **Impressum und Datenschutzerklärung** (Hetzner/OVH und Anthropic als Auftragsverarbeiter nennen; Speicherung eingezeichneter Balkone mit Löschfrist beschreiben, `server/app.py`-Docstring „keine personenbezogenen Daten“ korrigieren).
-- [ ] **Schriften selbst hosten** (Sora, Figtree statt Google Fonts) – überträgt sonst IP-Adressen an Google.
-- [ ] **Richtpreise** regelmäßig prüfen (Stand Okt. 2026) oder als Spanne angeben.
-- [ ] **Mesh-Lizenz** (Berlin 3D) für die nicht-kommerzielle öffentliche Nutzung schriftlich bestätigen lassen (Anfrage läuft), Quellenangabe nach Vorgabe.
-- [ ] **Content-Security-Policy**: Inline-Skripte in Dateien auslagern, `onerror`/`onclick`-Attribute durch Listener ersetzen, dann CSP mit `connect-src 'self'`, `frame-ancestors 'none'`.
-- [ ] **Barrierefreiheit**: Hauswände per Tastatur wählbar, Fokus nach dem Neuzeichnen des Panels halten, Kontraste der Hinweistexte (`.hinweis` 2,5:1, `.fine` 4,4:1), Paket-Auswahl mit Pfeiltasten, Ladeoverlay mit Fokus.
-- [ ] Statischer Modus: früher sagen, dass der Server fehlt (nicht erst nach dem Einzeichnen).
-- [ ] Zustand in die URL (Adresse/Wand/Balkon), damit Zurück/Neuladen nicht alles verliert.
-- [ ] Mobil (320 px): 3D-Bühne überladen (Sonnen-Box, Leistungsanzeige, Wandbild überlappen).
+| ID | Thema | Bereich | Prio | Aufwand | Verantwortlich |
+|---|---|---|---|---|---|
+| B-01 | Platzhalter in Impressum, Datenschutz, Barrierefreiheit ausfüllen (Anschrift, E-Mail, Hoster, Domain) | Recht | P1 | S | Betreiber |
+| B-02 | Schriftliche Bestätigung des Mesh-Anbieters zur nicht kommerziellen Nutzung inkl. genauer Quellenangabe; Text in Footer, Impressum, Lizenzen übernehmen | Recht/Daten | P1 | S | Betreiber |
+| B-03 | Entscheiden, ob drei aus dem Mesh abgeleitete Bilder aus der alten Git-Historie entfernt werden müssen (`docs/balkon.jpg`, `erkennung.jpg`, `karte.jpg`) | Recht | P1 | S | Betreiber |
+| B-04 | Server einrichten nach `docs/BETRIEB.md` (VPS in Deutschland, AV-Vertrag, Caddy ohne Access-Log, systemd), Domain | Betrieb | P1 | M | Betreiber |
+| B-05 | Test auf echten Geräten: älteres Android-Handy, iPhone, schwacher Laptop (Ladezeit, Bedienung, Hitze/Akku) | Qualität | P1 | S | Team |
+| B-06 | 3D-Ansicht per Tastatur bedienbar (Balkonwahl ohne Maus/Touch); danach Barrierefreiheitserklärung aktualisieren | Barrierefreiheit | P1 | M | Entwicklung |
+| B-07 | Kurzer Nutzertest mit 3–5 Mieter*innen (ohne Vorwissen): Finden sie Adresse, Balkon, Ergebnis, nächste Schritte? | UX | P1 | S | Team |
 
-## Rechnung und Daten
+## Daten und Genauigkeit
 
-- [ ] **Sonnenstunden**: Jetzt als „Stunden direkte Sonne bei klarem Himmel“ beschriftet; besser wettergewichtete Stunden ausweisen.
-- [ ] **Wetter**: synthetisches Referenzjahr → PVGIS-TMY für Berlin einlesen (`--wetter`).
-- [ ] **Bodenreflexion** in engen Höfen nicht wie auf freiem Feld rechnen (an Himmelssicht koppeln).
-- [ ] **Phantomgebäude im 3D-Modell**: Für den Schatten werden LoD2-Teile über dem bDOM schon verworfen, im angezeigten Modell noch nicht.
-- [ ] **Schattenquelle**: Gebäude für Schatten aus bDOM/Mesh statt LoD2 (Entscheidung offen).
-- [ ] **Speicherpaket**: Austausch nach ca. 10 Jahren einrechnen statt nur Hinweis.
-- [ ] **Kleine Module** (< 1,8 m Geländer) in den Katalog aufnehmen.
-- [ ] Wirtschaftlichkeitsparameter (Katalog, Strompreis, MwSt., Steigerung, Degradation, Jahr 2025) in eine gemeinsame `params.json` für Python und JS.
+| ID | Thema | Bereich | Prio | Aufwand | Notiz |
+|---|---|---|---|---|---|
+| D-01 | Kacheln rund um das **Zentrum Kreuzberg** verarbeiten, sobald das Berlin-3D-Portal wieder läuft (ein Befehl je Kachel) | Daten | P1 | S | Pilot mit Bezirksamt/Plan B 2030 |
+| D-02 | Echtes Wetter: PVGIS-Referenzjahr (TMY) für Berlin statt synthetischem Jahr; Schnittstelle `--wetter` existiert | Rechnung | P2 | S | braucht einmalig Zugriff auf re.jrc.ec.europa.eu |
+| D-03 | Validierung mit gemessenen Erträgen echter Balkonkraftwerke (z. B. aus dem Kreuzberg-Projekt); Genauigkeitsangabe danach belegen | Rechnung | P2 | M | Daten von Teilnehmenden, freiwillig |
+| D-04 | Balkone, die im Mesh nur als Textur auf glatter Fassade existieren: Tiefe optional vom Nutzer angeben lassen (z. B. „Balkon ragt ca. 1,2 m vor“) | Rechnung/UX | P3 | M | Auswirkung auf Ertrag meist gering |
+| D-05 | Bodenreflexion in engen Höfen an die Himmelssicht koppeln statt wie auf freiem Feld | Rechnung | P3 | S | |
+| D-06 | Sonnenstunden wettergewichtet ausweisen (heute: direkte Sonne bei klarem Himmel) | Rechnung | P3 | S | |
+| D-07 | Kleine Module (< 1,8 m Geländer) und Speicher als Variante | Rechnung | P3 | M | |
+| D-08 | LoD2-Ring ausdünnen (heute 4,4 Mio. Punkte bei 0,6 m Abstand) – weniger Arbeitsspeicher je Kachel | Server | P2 | S | ~560 MB Spitze je Kachel |
 
-## Skalierung / Architektur (vor dem zweiten Kiez)
+## 3D-Ansicht und Bedienung
 
-- [ ] **Stabile Hauswand-IDs** (Hash aus LoD2-Gebäude-ID, Ausrichtung, gerundeten Endpunkten) – heute ändern sich IDs bei jedem Pipeline-Lauf; Balkone, Angebote und Links zeigen dann auf falsche Wände. Balkone ebenfalls per Hash statt Listenindex.
-- [ ] **Angebote versionieren** (Modell- und Datenstand im Schlüssel), atomar schreiben (tmp-Ordner + rename).
-- [ ] **SQLite (WAL)** statt JSON-Caches: erkannte Balkone, eingezeichnete Balkone, Angebote, Claude-Budget; Migrationen über `PRAGMA user_version`.
-- [ ] **Kacheln + räumlicher Index**: 1-km²-Kacheln (float32, nach Zellen sortiert, `mmap`), je Angebot nur ±220 m laden statt der ganzen Punktwolke (heute ~650 MB je km², Innenstadt wäre ~17 GB RAM).
-- [ ] **Prozess-Pool** (begrenzte Warteschlange, gleiche Anfragen nur einmal rechnen) statt globaler Sperre.
-- [ ] **Statische Daten in Kacheln** (`walls.json` je Kachel statt einer `data.js`; Innenstadt wäre ~180 MB), unveränderliche URLs mit Release-Kennung, Cache-Header.
-- [ ] **Adresssuche über Server** (`/api/adresse`, SQLite FTS) für ganz Berlin (~400 000 Adressen).
-- [ ] **Pipeline-CLI** je Kachel, idempotent, Release mit Manifest; bDOM/DOP vorab in `.npy` umwandeln.
-- [ ] API auf Starlette/uvicorn, Health-Check, Konfiguration über Umgebungsvariablen, Backups (Litestream/restic).
-- [ ] Wiederholte Arbeit je Angebot vermeiden (`simuliere` = eine der Varianten, Balkongeometrie cachen).
-- [ ] Tests: synthetische Testszene (Horizont = atan(h/d)), Koordinaten-Konventionen, Zeitachse, ID-Stabilität, Pixel↔Meter, parallele Schreibzugriffe, API-Validierung.
+| ID | Thema | Bereich | Prio | Aufwand | Notiz |
+|---|---|---|---|---|---|
+| V-01 | Häuser am Kachelrand: bessere Kameraposition, Hinweis klarer (heute graue LoD2-Blöcke, Blick fast von oben) | Viewer | P2 | M | entfällt teilweise mit Nachbarkacheln |
+| V-02 | Fernansicht (vereinfachtes Mesh) wirkt von oben „verlaufen“ | Viewer | P3 | M | |
+| V-03 | Wiederherstellung nach Verlust des WebGL-Kontexts testen | Viewer | P2 | S | Code vorhanden, ungetestet |
+| V-04 | Hofseiten nur wählbar, wenn die Zellen geladen sind – Nachladen beim Drehen | Viewer | P2 | S | |
+| V-05 | Sonnenverlauf als Schieberegler im Ergebnis (Viewer kann es schon: `setzeSonne`) | UX | P3 | S | „Wann scheint die Sonne auf meinen Balkon?“ |
+| V-06 | Adresse vertippt oder Gebiet noch nicht abgedeckt unterscheiden (Liste aller Berliner Straßennamen, nur bei Fehlschlag laden) | UX | P3 | S | ~50 KB gzip |
+| V-07 | Teilen-Link: kurzer Hinweis, dass der Link die Adresse enthält | Datenschutz/UX | P3 | S | |
 
-## Leistung auf schwachen Geräten (noch nicht gemessen)
+## Betrieb und Entwicklung
 
-- [ ] Foto-Ansicht: Mesh-Texturen pro Angebot zuschneiden (heute ~36 MB, Ziel 3–5 MB), nur sichtbare Dreiecke, Kamera-Korridor.
-- [ ] Karte: Hauswände auf Canvas statt ~9 400 SVG-Elementen.
-- [ ] 3D: Schattenkarte kleiner als 4096², Sichtprüfung seltener, Render-Schleife pausieren, wenn nichts passiert.
-- [ ] Verbrauchsmodell (525 600 Werte) in einen Web Worker.
+| ID | Thema | Bereich | Prio | Aufwand | Notiz |
+|---|---|---|---|---|---|
+| E-01 | GitHub Actions: Tests (`tests/test_rechner.py`) und Syntaxprüfung bei jedem Push | Qualität | P2 | S | |
+| E-02 | Browser-Ende-zu-Ende-Test (Playwright) ins Repo: Adresse → Balkon → Ergebnis | Qualität | P2 | S | Skript existiert lokal |
+| E-03 | Abhängigkeiten mit Hashes festschreiben (`pip install --require-hashes`) | Sicherheit | P3 | S | |
+| E-04 | Kachel-Releases versionieren (neue URL bei geänderten Daten), dann Kacheldateien `immutable` cachen | Betrieb | P3 | S | |
+| E-05 | Alte Skripte aus der LoD2-/Claude-Version aufräumen (`pipeline/angebot.py`, `balkone_claude.py`, `fassaden_pipeline.py`, …) | Wartung | P3 | S | `kachel.py` nutzt noch Teile davon |
 
-## Produkt / UX
+## Ideen für die Zusammenarbeit mit dem Bezirk
 
-- [ ] Startseite: Adresse auf Straßenkarte (basemap.de oder selbst gehostetes OSM), dann 3D-Ausschnitt nur um die Adresse.
-- [ ] Angebotsseite: fester Blickkorridor statt freier 360°-Drehung.
-
-## Erledigt (02.11.2026)
-
-- Nicht-kommerziell: Partnerlinks, Shop-Katalog, Produktbilder, Garantie-Badges, Klick-Zählung (`/api/klick`) und `partner.json` entfernt; neutrale Ausstattungen mit Richtpreisen; „Angebot“ heißt für Nutzer jetzt „Auswertung/Ergebnis“; nächste Schritte mit Vermieter-Zustimmung und Links zu Verbraucherzentrale und Marktstammdatenregister.
-
-## Erledigt (23.10.2026)
-
-- Caddy-Beispielkonfiguration korrigiert (`_cache/`, versteckte Dateien, Hilfsdateien liefern 404; mit Caddy 2.8 geprüft), Timeouts, Body-Limit, systemd-Sandbox.
-- Server: Zeitlimit je Verbindung, begrenzte gleichzeitige Verbindungen, Rechen-Warteschlange mit Zeitlimit (503), Obergrenze für Nutzer-Angebote auf Platte, Boxen auf 25 cm gerundet, Bäume auf 0,5 m.
-- Limits je IPv4 bzw. IPv6-/64, kein Komplett-Reset der Zähler mehr.
-- Strenge Prüfung: `fullmatch` mit ASCII-Ziffern, kein NaN/Infinity, keine internen Fehlertexte an Nutzer, Nullbyte-Pfade abgefangen.
-- Schreibzugriffe auf die JSON-Caches unter Sperre (Wettlauf behoben), Claude-Tagesbudget überlebt Neustarts.
-- Modellausgabe (Balkonerkennung) auf feste Typen/Wertebereiche geprüft, Geschoss im Frontend als Zahl geprüft.
-- Angebotsseite: nur gültige Angebots-IDs (keine fremden Daten über den Link), verständliche Meldung bei unbekanntem/kaputtem Angebot, läuft ohne WebGL (Zahlen + Wandansicht), three.js selbst gehostet, schmale Balkone ohne passendes Set zeigen den Ertrag statt abzustürzen, 320 px ohne horizontales Scrollen.
-- Zahlen: Schattenverlust bei skalierten Paketen korrigiert, 20-Jahres-Werte eindeutig (brutto/netto), Sonnenstunden ehrlich beschriftet, Strompreis als Arbeitspreis, Speicherpaket nicht mehr „lohnt sich am meisten“, kleines Modul nicht mehr mit 450 Wp gerechnet.
-- Texte: 0 % MwSt. ohne „du sparst“, Garantie „auf Module“, kein „Foto hochladen“, kein „±15 %“.
-- Adresssuche: genaue Hausnummer zuerst (5 ≠ 50), Zusätze (24 a), ohne Umlaute/ß, „Str.“, Postleitzahl als weicher Filter, Enter springt nur bei eindeutigem Treffer; API-Fehler und Zeitüberschreitungen verständlich.
+| ID | Thema | Prio | Notiz |
+|---|---|---|---|
+| I-01 | Flyer/Aushang mit QR-Code für Häuser im Projektgebiet | P2 | Styleguide hat Formate (gestapeltes Logo) |
+| I-02 | „Solarbotschafter*innen-Modus“: mehrere Balkone eines Hauses nacheinander prüfen und als Übersicht ausdrucken | P3 | ohne Speicherung auf dem Server |
+| I-03 | Leichte Sprache und englische Fassung | P3 | Berlin.de bietet Leichte Sprache an |
