@@ -1,101 +1,178 @@
-# Balki-Strom
+# balki strom
 
-Ein kostenloser, nicht-kommerzieller Sonnen-Check für Berliner Balkone: Adresse eingeben, Balkon wählen und sehen, ob sich dort ein Balkonkraftwerk lohnt – berechnet aus dem 3D-Stadtmodell von Berlin, mit Verschattung durch Nachbarhäuser und Bäume über das ganze Jahr.
+*Balcony solar check for Berlin tenants: find your building in the 3D city model, tap your balcony, get the yearly yield and payback.*
 
-> **Nicht kommerziell.** Keine Werbung, keine Partnerlinks, keine Provision, kein Verkauf von Daten oder Kontakten. Die Ausstattungen sind neutrale Beispiele mit Richtpreisen, ohne Marken oder Shop. Ein privates Studierendenprojekt, derzeit ohne Einnahmen.
+Kostenlose, nicht kommerzielle Website für Mieter\*innen in Berlin: Adresse eingeben, das eigene Haus im 3D-Stadtmodell finden, auf den Balkon tippen. Die Seite rechnet aus, wie viel Strom ein Balkonkraftwerk dort im Jahr erzeugt, wie viel Geld das spart und nach wie vielen Jahren es sich bezahlt macht. Danach zeigt sie die Schritte bis zur Anmeldung.
+
+[![Lizenz: AGPL-3.0](https://img.shields.io/badge/Lizenz-AGPL--3.0-2E6BF0)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-13243A)](requirements.txt)
+[![Tracking: keins](https://img.shields.io/badge/Tracking-keins-19B37A)](#datenschutz)
+[![kostenlos · ohne Anmeldung](https://img.shields.io/badge/kostenlos-ohne%20Anmeldung-19B37A)](#datenschutz)
 
 <p align="center">
-  <img src="docs/0_uebersicht.png" width="48%" alt="Startseite: Adresssuche und Luftbild, sonnige Hauswände gelb markiert">
-  <img src="docs/1_karte.png" width="48%" alt="Hauswand gewählt: Umriss aus dem Gebäudemodell, Balkon einzeichnen">
+  <img src="docs/bilder/start.png" width="100%" alt="Startseite von balki strom mit Adresssuche">
+</p>
+
+## So funktioniert's
+
+1. **Adresse eingeben.** Die Suche läuft im Browser auf einer Liste der amtlichen Hauskoordinaten.
+2. **Auf den Balkon tippen.** Das Haus erscheint im fototexturierten 3D-Mesh von Berlin. Ein Tipp auf die Hauswand wählt die Stelle, an der die Module hängen sollen.
+3. **Ergebnis lesen.** Ertrag in kWh pro Jahr, Verschattung, Ersparnis, Kostenspanne und Amortisation. Darunter fünf Schritte: Vermieter\*in fragen (mit fertiger E-Mail), Set kaufen, montieren, im Marktstammdatenregister anmelden, Hilfe vor Ort.
+
+<p align="center">
+  <img src="docs/bilder/ergebnis.png" width="54%" alt="Ergebnis: Ersparnis pro Jahr, Ertrag, Ausrichtung, Verschattung, Kosten und Amortisation">
+  &nbsp;
+  <img src="docs/bilder/mobil.png" width="30%" alt="Ergebnis auf dem Smartphone">
 </p>
 <p align="center">
-  <img src="docs/2_laden.png" width="48%" alt="Ladebildschirm: Auswertung wird erstellt">
-  <img src="docs/3_angebot.png" width="48%" alt="Ergebnis: Foto-Ansicht des Hauses mit Modul, Sonnenverlauf, Ertrag und Ersparnis">
+  <img src="docs/bilder/schritte.png" width="70%" alt="Schritt 1: E-Mail an die Vermieterseite, im Browser erzeugt">
 </p>
-<p align="center"><sub>Adresse suchen → Hauswand wählen und Balkon einzeichnen → Auswertung wird erstellt → Ergebnis mit Foto-Ansicht, Sonnenverlauf und Ersparnis</sub></p>
 
-## Ablauf
+## Funktionen
 
-1. **Fassaden** – aus einer Mesh-Kachel werden Gebäudeumrisse abgeleitet, jede Wand bekommt ihre Himmelsrichtung und eine Frontalansicht.
-2. **Balkone** – Claude markiert Balkone und Loggien per Batch API; Maße kommen aus dem Bildmaßstab.
-3. **Sonne und Schatten** – für jeden Modulpunkt wird der Horizont aus Nachbarhäusern und Bäumen vermessen und der Ertrag stündlich über ein Jahr simuliert (pvlib). Den Eigenverbrauch rechnet ein minutengenaues Haushaltsmodell (Grundlast, Geräte zu typischen Zeiten, tagsüber zu Hause oder nicht).
-4. **Ergebnis** – Ertrag, Ersparnis und Amortisation für typische Ausstattungen (neutrale Richtpreise), dazu ein 3D-Hausmodell mit Sonnenverlauf und Live-Leistung sowie die nächsten Schritte mit Links zu unabhängiger Beratung.
-5. **Nutzerseite** – Adresse eingeben, Hauswand wählen (Süd, Südost, Südwest hervorgehoben), Balkon antippen oder selbst einzeichnen. Claude sucht Balkone nur auf der Wand, die jemand anklickt; das Ergebnis wird für alle gespeichert. Der bisherige Fassaden-Explorer bleibt als internes Werkzeug (`intern.html`).
+- Eigenes Haus im echten 3D-Stadtmodell (Berlin 3D-Mesh mit Fototextur). Geometrie wird in Zellen, Texturen in Stufen geladen, damit es auch auf schwachen Smartphones läuft.
+- Ertrag für genau die angetippte Stelle: 1 oder 2 Module, senkrecht am Geländer oder 30° geneigt.
+- Verschattung durch Nachbarhäuser und Bäume über ein ganzes Jahr.
+- Eigenverbrauch, Ersparnis, Kostenspanne des Sets und Amortisation. Strompreis, Haushaltsgröße und „tagsüber zu Hause“ sind änderbar.
+- Ohne WebGL: grobe Schätzung nach Himmelsrichtung des Balkons.
+- E-Mail an die Vermieterseite (Zustimmung nach § 554 BGB) und Werte für die Anmeldung im Marktstammdatenregister, beides im Browser erzeugt.
+- Keine Anmeldung, keine Cookies, kein Tracking, keine externen Ressourcen.
 
-## Nutzung
+## Was gerechnet wird
 
-```bash
-pip3 install -r requirements.txt anthropic
+| Schritt | Wo | Wie |
+|---|---|---|
+| Wand und Modullage | Server, `balki/rechner.py` | Wandrichtung aus den Mesh-Dreiecken im Umkreis von 2,5 m um den Tipp-Punkt; Außenseite und Geländerkante aus dem Mesh. Die Module hängen außen vor dem Geländer. |
+| Horizont | Server, `balki/physik.py` | Aus einer Punktwolke im Umkreis von 220 m (Mesh; außerhalb der Kachel LoD2-Gebäude und bDOM-Bäume), in 2°-Sektoren, getrennt nach Gebäuden und Bäumen. |
+| Ertrag | Server, `balki/physik.py` | Stündliche Jahressimulation mit [pvlib](https://pvlib-python.readthedocs.io): Sonnenstand, Erbs, Hay-Davies, ASHRAE-IAM, Faiman-Modultemperatur, PVWatts. Module 430 Wp, Wechselrichter auf 800 W begrenzt. Baumkronen lassen 30 % (Mai–Oktober) bzw. 65 % (November–April) des Lichts durch. |
+| Wirtschaftlichkeit | Browser, `web/js/lastgang.js`, `ergebnis.js`, `params.js` | Die 8 760 Stundenwerte werden mit einem minutengenauen, synthetischen Haushaltslastgang verrechnet (Grundlast, Geräte zu typischen Zeiten, Werktag/Wochenende, Urlaub). Daraus folgen Eigenverbrauch, € pro Jahr und Amortisation über 20 Jahre. |
 
-# 1. Fassaden aus einer Kachel des Berlin 3D Downloadportals
-python3 pipeline/fassaden_pipeline.py data/<kachel> webapp
+Alle Annahmen (Strompreis 35 ct/kWh, Set-Preise, Haushaltsverbrauch, Preissteigerung, Degradation) stehen in [`web/js/params.js`](web/js/params.js) und werden auf der Seite angezeigt.
 
-# 2. Balkone erkennen (API-Key in .env: ANTHROPIC_API_KEY=...)
-python3 pipeline/balkone_claude.py submit --classes S
-python3 pipeline/balkone_claude.py collect
+### Grenzen
 
-# 3. Ertrag simulieren und Ergebnisseiten erzeugen
-python3 pipeline/angebot.py data/<kachel> webapp --alle-angebote
+- **Wetter:** synthetisches Referenzjahr für Berlin aus Monatsmitteln. Eine PVGIS-TMY-Datei kann mit `--wetter` eingelesen werden.
+- **Genauigkeit:** Der Jahresertrag ist auf etwa ±15 % genau. Er ist eine Schätzung, keine Zusage.
+- **Gebiet:** derzeit eine Mesh-Kachel in Berlin-Wilmersdorf (ca. 380 × 370 m). Kacheln in Kreuzberg folgen, sobald das Berlin 3D-Downloadportal wieder erreichbar ist.
+- **Preise:** Richtwerte, Stand November 2026, keine Kaufempfehlung.
 
-# 4. Adressen für die Suche (amtliche Hauskoordinaten Berlin)
-python3 pipeline/adressen.py webapp
+## Schnellstart
 
-# 5. Webseite mit API starten (Balkonsuche auf Abruf, selbst einzeichnen)
-python3 server/app.py data/<kachel> webapp --port 8000     # oder: webapp/start.command
-```
-
-### LoD2-Version (offene Daten, ohne Mesh)
-
-Alle Quellen unter Datenlizenz Deutschland – Zero 2.0: LoD2-Gebäude für Häuser und Hauswände, bDOM 2026 für Bäume, Luftbild DOP20 2025 für Karte und Dächer. Die Hauswände haben eine schematische Ansicht (Umriss), Balkone zeichnet der Nutzer ein; die automatische Balkonsuche gibt es nur für Wände mit Foto.
+Voraussetzungen: Python 3.10 oder neuer, ein aktueller Browser.
 
 ```bash
-# Gebiet in EPSG:25833 (Kern, Hauswände); 250 m Umgebung für Schatten werden automatisch mitgeladen
-python3 pipeline/lod2_pipeline.py data/downloads webapp_lod2 --bbox 385500,5816800,386500,5817800
-python3 pipeline/adressen.py webapp_lod2
-# optional: Fassadenfotos aus einer Mesh-Kachel für die LoD2-Wände (Rückseiten werden verworfen)
-python3 pipeline/mesh_fotos.py data/3858_58171_-002 webapp_lod2
-python3 server/app.py data/3858_58171_-002 webapp_lod2 --port 8000   # erstes Argument: Mesh-Kachel (für Fotos) oder data/downloads
-
-# Vergleich mit der Mesh-Version (gleiche Balkone, Ertrag je kWp)
-python3 pipeline/vergleich_mesh_lod2.py webapp webapp_lod2
+git clone https://github.com/janhh011/balki_strom.git
+cd balki_strom
+pip install -r requirements.txt
 ```
 
-Rohdaten liegen unter `data/` (nicht im Repo):
+**1. Kachel verarbeiten.** Eine Mesh-Kachel (OBJ, MTL, JPG) aus dem [Berlin 3D-Downloadportal](https://www.businesslocationcenter.de/berlin3d-downloadportal/) laden und nach `data/<kachel-ordner>/` entpacken. Dann:
 
-```
-data/
-  3858_58171_-002/      Mesh-Testkachel (Berlin 3D, nur für Fassadenbilder)
-  downloads/
-    lod2/               LoD2-Gebäude, 1-km-Kacheln (pipeline/lod2_download.sh)
-    luftbild/           Luftbilder DOP20 2025
-    laserscan/          Laserscan (ALS)
-    mesh/               weitere Mesh-Kacheln
+```bash
+python3 pipeline/kachel.py data/3858_58171_-002 --name Wilmersdorf
 ```
 
-Hosting, Sicherheit und Datenschutz: [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md) · Offene Punkte: [docs/BACKLOG.md](docs/BACKLOG.md) · Styleguide: [docs/STYLEGUIDE.md](docs/STYLEGUIDE.md) ([PDF](docs/STYLEGUIDE_Solar-Blue.pdf))
+Das erzeugt das Web-Paket unter `web/tiles/<id>/`, trägt die Kachel in `web/tiles/tiles.json` ein und legt den Server-Cache unter `data/work/<id>/` an. LoD2-Gebäude und bDOM für die Umgebung lädt das Skript selbst von gdi.berlin.de nach `data/umgebung/`. Ein zweiter Aufruf nutzt den Cache und dauert Sekunden. Optional: `pip install fast-simplification mapbox-earcut` (vereinfachte Fernansicht, Dreiecke für LoD2-Polygone).
+
+**2. Adressen laden.** Amtliche Hauskoordinaten für alle Kacheln aus `tiles.json`:
+
+```bash
+python3 pipeline/adressen.py
+```
+
+**3. Server starten.**
+
+```bash
+python3 server/app.py
+```
+
+Dann <http://127.0.0.1:8000> öffnen.
+
+Die Oberfläche lässt sich auch ohne Kachel und Server mit Testdaten ansehen: `python3 -m http.server -d web 8000`, dann <http://127.0.0.1:8000/?attrappe=1> öffnen. Statt der 3D-Ansicht erscheint eine gezeichnete Hauswand, die Zahlen sind erfunden. `web/adressen.json` muss vorhanden sein (Schritt 2, ggf. mit `--bbox`).
+
+**Tests:**
+
+```bash
+python3 tests/test_rechner.py
+```
+
+### Server-Optionen
+
+| Option | Standard | Bedeutung |
+|---|---|---|
+| `--port` | `8000` | Port |
+| `--host` | `127.0.0.1` | Adresse; hinter einem Reverse-Proxy immer `127.0.0.1` |
+| `--web` | `web/` | Webroot |
+| `--work` | `data/work/` | Server-Caches der Kacheln |
+| `--wetter` | – | PVGIS-TMY-Datei statt synthetischem Wetter |
+| `--hinter-proxy` | aus | `X-Forwarded-For` von 127.0.0.1 übernehmen (Ratenlimit je Client) |
+
+Umgebungsvariablen: `RECHNEN_PARALLEL` (gleichzeitige Rechnungen, Standard 2), `MAX_VERBINDUNGEN` (64), `LIMIT_ERTRAG_STUNDE` (60 je IP), `LIMIT_LESEN_MINUTE` (600 je IP).
+
+## Weitere Kachel hinzufügen
+
+```bash
+# Kachel aus dem Berlin 3D-Downloadportal nach data/<neue-kachel>/ entpacken, dann:
+python3 pipeline/kachel.py data/<neue-kachel> --name Kreuzberg
+python3 pipeline/adressen.py
+# Server neu starten
+```
+
+Mehr ist nicht nötig. `kachel.py` aktualisiert die Umgebungsringe benachbarter Kacheln automatisch, sodass der Schatten über den Kachelrand hinaus aus dem Mesh statt aus LoD2 kommt (abschalten mit `--keine-nachbarn`). Weitere Optionen: `--web-neu`, `--umgebung-neu`, `--neu`.
+
+## Projektstruktur
+
+```
+balki/          Python-Paket: physik.py (Wetter, Horizont, Ertrag), rechner.py (Tipp-Punkt -> Module -> Ertrag)
+pipeline/       kachel.py (Mesh-Kachel -> Web-Paket + Server-Cache), adressen.py (Hauskoordinaten)
+server/app.py   Webserver: liefert web/ aus, POST /api/ertrag
+web/            Webroot: index.html, css/, fonts/, vendor/three/, js/
+  js/           app.js, suche.js, viewer.js, api.js, ergebnis.js, lastgang.js, params.js, schritte.js
+tests/          synthetische Testszene für den Rechner
+docs/           ARCHITEKTUR.md, STYLEGUIDE.md, bilder/
+data/           Rohkacheln, Umgebung, Server-Cache (nicht im Repo)
+```
+
+Die übrigen Skripte in `pipeline/` stammen aus einer früheren Version (LoD2-Fassaden, automatische Balkonerkennung) und werden von der aktuellen Seite nicht verwendet.
+
+Architektur und Schnittstellen: [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md). Gestaltung: [docs/STYLEGUIDE.md](docs/STYLEGUIDE.md).
+
+### API
+
+Der Server hat einen Endpunkt. Koordinaten in EPSG:25833.
+
+```http
+POST /api/ertrag
+Content-Type: application/json
+
+{"kachel": "3858_58171", "x": 386001.2, "y": 5817300.4, "z": 52.3, "nx": 0.02, "ny": -0.99,
+ "module": 2, "aufstellung": "senkrecht"}
+```
+
+Die Antwort enthält Azimut und Himmelsrichtung, Geschoss, Modulecken, `kwh_jahr` (mit Verschattung) und `kwh_jahr_frei` (ohne), 12 Monatswerte, 8 760 Stundenwerte, den Horizont nach Gebäuden und Bäumen sowie Hinweise. Fehler: `400` mit deutschem Fehlertext, `429` Ratenlimit, `503` ausgelastet. Anfragen sind auf 1 KB begrenzt. Vollständiges Format: [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md#post-apiertrag-server).
 
 ## Daten und Lizenzen
 
-- LoD2-Gebäude, bDOM, Luftbild DOP20, Hauskoordinaten: Geoportal Berlin, Datenlizenz Deutschland – Zero 2.0.
-- 3D-Mesh (Fassadenfotos): Berlin 3D-Downloadportal; Nutzung hier ausschließlich nicht-kommerziell gemäß den Lizenzbedingungen des Anbieters.
-- Balkonerkennung auf Fassadenbildern über die Claude API (Anthropic); es werden nur Fassadenbilder übertragen, keine Nutzerdaten.
-- three.js (MIT), pvlib (BSD).
+| Quelle | Verwendung | Lizenz |
+|---|---|---|
+| 3D-Stadtmodell (Mesh), © Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen Berlin, Berlin 3D-Downloadportal | Hausansicht, Horizont | Nicht kommerzielle Nutzung vom Anbieter gestattet. Rohdaten und erzeugte Kacheln sind **nicht** im Repository. |
+| Geoportal Berlin (gdi.berlin.de): LoD2-Gebäude, bDOM, amtliche Hauskoordinaten | Schatten außerhalb der Kachel, Adresssuche | Datenlizenz Deutschland – Zero – Version 2.0 |
+| [three.js](https://threejs.org) | 3D-Ansicht, selbst gehostet in `web/vendor/three/` | MIT |
+| [pvlib](https://github.com/pvlib/pvlib-python) | Ertragsrechnung | BSD-3-Clause |
+| Schriften Sora und Figtree, selbst gehostet in `web/fonts/` | Oberfläche | SIL Open Font License 1.1 |
 
-## Stand
+Der Code von balki strom steht unter der [GNU Affero General Public License v3.0](LICENSE). Wer eine geänderte Fassung als Website betreibt, muss deren Quellcode den Nutzer\*innen zugänglich machen.
 
-- Eine Kachel in Berlin-Wilmersdorf: 95 Südfassaden ausgewertet, 111 Balkone mit Ergebnis.
-- Wetter aus einem synthetischen Referenzjahr (PVGIS-TMY über `--wetter` einlesbar); Ertrag etwa ±15 %, Maße ±0,3–0,5 m.
-- Preise sind Richtwerte für typische Sets (Stand Okt. 2026), keine Kaufempfehlung.
-- LoD2-Version (Branch `main`): 1 km² Wilmersdorf in gut 1 Minute auf dem Mac, 4.685 Hauswände. Gegenüber der Mesh-Version (Branch `version/mesh-v1`) für 87 gleiche Balkone: Ertrag im Median +4 %, 74 % innerhalb ±20 %. Abweichungen vor allem im Erdgeschoss und 1. Stock (Bäume im unbelaubten bDOM schwächer erfasst).
+## Datenschutz
 
-## Warum ich das baue
+Die Adresssuche läuft vollständig im Browser. Der Server erhält nur die Koordinaten des angetippten Punktes und die gewählte Ausstattung, keine Adresse. Es gibt keine Cookies, kein Tracking und keine Anfragen an Dritte. Der Server speichert keine Anfragen und schreibt keine IP-Adressen ins Log; das Ratenlimit zählt nur im Arbeitsspeicher. Die E-Mail an die Vermieterseite entsteht im Browser. Geänderte Annahmen (Strompreis, Haushalt) merkt sich nur der eigene Browser.
 
-Balkonkraftwerke sind günstig, legal und in einer Stunde montiert – trotzdem hat die Mehrheit keins. Meine Hypothese: Es scheitert selten an der Technik, sondern am Weg dorthin. Wer sich nicht für Solar interessiert, recherchiert weder Wattzahlen noch Halterungen oder Ausrichtung.
+## Mitmachen
 
-Deshalb drehe ich den Prozess um: Statt dass Menschen sich selbst einarbeiten müssen, rechnet die Software für ihren konkreten Balkon vor – Ausrichtung, Maße, Schatten und Ertrag. Die erste Frage „Lohnt sich das bei mir?“ soll in einer Minute beantwortet sein, unabhängig und ohne Verkaufsinteresse.
+Fehlerberichte, Vorschläge und Pull Requests sind willkommen. Besonders hilfreich sind gemessene Jahreserträge echter Balkonkraftwerke in Berlin, um die Rechnung zu prüfen. Ablauf: [CONTRIBUTING.md](CONTRIBUTING.md). Sicherheitslücken bitte nicht öffentlich melden, sondern wie in [SECURITY.md](SECURITY.md) beschrieben.
 
-Mich interessiert dabei die übergeordnete Frage, wie sich KI und offene Geodaten nutzen lassen, um Hürden der Energiewende im Alltag abzubauen – gerade für Mieterinnen und Mieter, die sich bisher nicht mit dem Thema beschäftigt haben.
+balki strom ist ein unabhängiges Projekt. Es soll Initiativen wie die Balkonkraftwerk-Aktion des Bezirks Friedrichshain-Kreuzberg unterstützen und ist kein offizielles Angebot des Bezirks.
 
-Das Projekt ist ein laufendes Experiment und kein fertiges Produkt. Feedback, Daten zur Validierung (gemessene Erträge) und Gespräche, etwa mit Initiativen und Bezirken, sind willkommen.
+## Autor
 
-– Jan-Hendrik Höltkemeier · M.Sc. IMES, TU Berlin
+Jan-Hendrik Höltkemeier, M.Sc., TU Berlin · [@janhh011](https://github.com/janhh011)
