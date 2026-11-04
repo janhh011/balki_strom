@@ -105,10 +105,10 @@ async function adresseGewaehlt(a, {push = true, fokus = true} = {}) {
   try { ok = await v.zeigeOrt(a.x, a.y); } catch (e) { console.warn('zeigeOrt', e); ok = false; }
   if (st.adresse !== a) return;             // inzwischen andere Adresse gewählt
   if (ok === false) {
-    zeigeHinweis('Für diese Adresse haben wir noch kein 3D-Modell. Du kannst unten grob schätzen lassen.');
+    zeigeHinweis('Für dieses Gebiet gibt es noch kein 3D-Modell. Unten kannst du grob schätzen lassen.');
     grobModus();
   } else if (v.ort && v.ort.haus === 'umgebung') {
-    zeigeHinweis('Dein Haus liegt am Rand unseres 3D-Modells und ist nur vereinfacht zu sehen. Du kannst trotzdem auf die Wand tippen.');
+    zeigeHinweis('Dein Haus liegt am Rand des 3D-Modells und ist nur vereinfacht zu sehen. Du kannst trotzdem auf die Wand tippen.');
   }
 }
 
@@ -143,7 +143,7 @@ function viewerHolen() {
       const keinWebgl = e && (e.name === 'ViewerNichtVerfuegbar' || (mod.ViewerNichtVerfuegbar && e instanceof mod.ViewerNichtVerfuegbar));
       if (!keinWebgl) console.warn('Viewer-Fehler', e);
       ohne3d(keinWebgl ? 'Dein Gerät kann die 3D-Ansicht leider nicht zeigen' : 'Die 3D-Ansicht konnte nicht starten',
-        'Kein Problem – wir können trotzdem grob schätzen. Wohin zeigt dein Balkon?');
+        'Kein Problem – eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?');
       return null;
     }
   })();
@@ -175,7 +175,7 @@ const RICHTUNG_AZ = [['Süd', 180], ['Südwest', 225], ['West', 270], ['Südost'
 function grobModus() {
   if (!$('ohne3d').hidden) return;
   $('ohne3d-titel').textContent = 'Grob schätzen ohne 3D';
-  $('ohne3d-text').textContent = 'Wohin zeigt dein Balkon? Nimm die Richtung, in die du vom Balkon aus schaust. Schatten nehmen wir dann pauschal an.';
+  $('ohne3d-text').textContent = 'Wohin zeigt dein Balkon? Nimm die Richtung, in die du vom Balkon aus schaust. Der Schatten wird dann pauschal angenommen.';
   $('ohne3d').hidden = false; $('ohne3d-link').parentElement.hidden = true;
 }
 function baueRichtungen() {
@@ -250,7 +250,7 @@ async function berechne() {
 function render(grob, neu = false) {
   E.querySelector('[data-e="warten"]').hidden = true;
   // Eigenverbrauch braucht etwas Rechenzeit: erst "rechnet" zeigen, dann rechnen
-  zeigeLaden(E, 'Wir rechnen deinen Eigenverbrauch …');
+  zeigeLaden(E, 'Dein Eigenverbrauch wird berechnet …');
   requestAnimationFrame(() => setTimeout(() => {
     const d = st.antwort; if (!d) return;
     zeigeErgebnis(E, d, st.annahmen, {adresse: st.adresse ? adressText(st.adresse) : '', grob});

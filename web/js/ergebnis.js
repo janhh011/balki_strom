@@ -72,7 +72,7 @@ function sonneText(v) {
 
 // ---------------------------------------------------------------- Darstellung
 // el: <section id="ergebnis">; kontext: {adresse, grob}
-export function zeigeLaden(el, text = 'Wir rechnen Sonne und Schatten für deinen Balkon …') {
+export function zeigeLaden(el, text = 'Sonne und Schatten für deinen Balkon werden berechnet …') {
   el.hidden = false;
   el.querySelector('[data-e="inhalt"]').hidden = true;
   const l = el.querySelector('[data-e="laden"]');
@@ -120,7 +120,7 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
   q('tags').innerHTML = tags.map(([k, t]) => `<span class="tag ${k}">${esc(t)}</span>`).join('');
   q('kosten').textContent = `Ein passendes Set mit Halterung kostet etwa ${nf(r.kosten.min)}–${nf(r.kosten.max)} €.`;
   q('unter').textContent = kontext.grob
-    ? 'Grobe Schätzung ohne 3D-Modell: Schatten von Nachbarhäusern und Bäumen haben wir pauschal angenommen.'
+    ? 'Grobe Schätzung ohne 3D-Modell: Schatten von Nachbarhäusern und Bäumen ist pauschal angenommen.'
     : '';
   q('unter').hidden = !kontext.grob;
   q('ansage').textContent = (mitEuro ? `Dein Balkon spart rund ${eur(spar)} im Jahr. ` : `Dein Balkon macht rund ${kwh} kWh Strom im Jahr. `)
@@ -132,14 +132,14 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
 
   // Hinweise des Servers
   const hinweise = [...(antwort.hinweise || [])];
-  if (antwort.rand) hinweise.push('Dein Balkon liegt am Rand unseres 3D-Gebiets. Schatten von weiter weg schätzen wir mit einfacheren Daten.');
+  if (antwort.rand) hinweise.push('Dein Balkon liegt am Rand des 3D-Modells. Schatten von weiter weg kommt aus einfacheren Daten.');
   if (!kontext.grob && antwort.verschattung >= 0.6) hinweise.push('Hier kommt wenig direkte Sonne an. Ein Balkonkraftwerk lohnt sich dann nur langsam.');
   q('hinweise').innerHTML = hinweise.slice(0, 4).map(h => `<li>${esc(h)}</li>`).join('');
   q('hinweise').hidden = !hinweise.length;
 
   monatsDiagramm(q('monate'), antwort.monat_kwh || []);
 
-  // So haben wir gerechnet
+  // So wird gerechnet
   const rows = [
     ['Module', `${antwort.modul.anzahl} × ${nf(antwort.modul.wp_je_modul)} Wp (${nf(antwort.modul.breite_m, 2)} × ${nf(antwort.modul.hoehe_m, 2)} m), ${a.aufstellung === 'geneigt' ? '30° ausgestellt' : 'senkrecht am Geländer'}`],
     ['Wechselrichter', `höchstens ${nf(PARAMS.wechselrichterMaxW)} W`],
@@ -153,8 +153,8 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
   if (!kontext.grob && antwort.sonnenstunden_frei) rows.splice(3, 0, ['Direkte Sonne', `${nf(antwort.sonnenstunden)} von ${nf(antwort.sonnenstunden_frei)} möglichen Stunden`]);
   q('annahmen').innerHTML = rows.map(([t, v]) => `<dt>${t}</dt><dd>${esc(v)}</dd>`).join('');
   q('wetter').textContent = kontext.grob
-    ? 'Ohne 3D-Modell rechnen wir mit einem typischen Berliner Wetterjahr und pauschalem Schatten. Mit dem 3D-Modell wird es genauer.'
-    : `Wir haben Nachbarhäuser und Bäume aus dem 3D-Stadtmodell Berlin vermessen und den Ertrag für jede Stunde eines Jahres simuliert${antwort.wetter ? ` (${antwort.wetter})` : ''}. Deinen Verbrauch rechnen wir Minute für Minute mit einem typischen Haushalt deiner Größe. Das ist eine Schätzung: Das Wetter schwankt von Jahr zu Jahr, und Verbrauch und Montage verändern das Ergebnis.`;
+    ? 'Ohne 3D-Modell nimmt die Rechnung ein typisches Berliner Wetterjahr und pauschalen Schatten an. Mit dem 3D-Modell wird es genauer.'
+    : `Nachbarhäuser und Bäume stammen aus dem 3D-Stadtmodell Berlin; der Ertrag ist für jede Stunde eines Jahres simuliert${antwort.wetter ? ` (${antwort.wetter})` : ''}. Dein Verbrauch ist Minute für Minute mit einem typischen Haushalt deiner Größe gerechnet. Das ist eine Schätzung: Das Wetter schwankt von Jahr zu Jahr, und Verbrauch und Montage verändern das Ergebnis.`;
   return r;
 }
 

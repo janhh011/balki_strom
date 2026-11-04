@@ -118,7 +118,7 @@ export function suche(D, q) {
     let t = [...genau, ...zusatz, ...ohneZusatz, ...anfang];
     let nrFehlt = false;
     if (!t.length && pool.length && strasse.length) {
-      // Nummer gibt es (bei uns) nicht: nächstgelegene Nummern derselben Straße anbieten
+      // Nummer gibt es (in den Daten) nicht: nächstgelegene Nummern derselben Straße anbieten
       const n = parseInt(nr, 10);
       t = [...pool].sort((a, b) => Math.abs(parseInt(a.basis || 0, 10) - n) - Math.abs(parseInt(b.basis || 0, 10) - n)).slice(0, 5);
       nrFehlt = true;
@@ -145,7 +145,7 @@ export function gebietText(D) {
   const namen = [...new Set(D.gebiete.map(g => g.name).filter(Boolean))];
   const str = D.strassen.map(s => s.name);
   const bsp = str.slice(0, 4).join(', ') + (str.length > 4 ? ' …' : '');
-  return `${namen.join(', ') || 'unser Testgebiet'} (${bsp})`;
+  return `${namen.join(', ') || 'das Testgebiet'} (${bsp})`;
 }
 
 // ---------------------------------------------------------------- Combobox
@@ -176,10 +176,10 @@ export function bindeSuche({form, input, liste, status, onWahl}) {
       info('Die Adresssuche konnte nicht laden. Lade die Seite bitte neu.');
       status.textContent = 'Die Adresssuche konnte nicht laden.';
     } else if (!treffer.length) {
-      info(`<b>Diese Adresse haben wir noch nicht.</b> Bisher gibt es balki strom nur für ${esc(gebietText(D))}. Weitere Kieze kommen dazu – prüf sonst die Schreibweise.`);
-      status.textContent = 'Keine passende Adresse in unserem Gebiet.';
+      info(`<b>Diese Adresse ist noch nicht dabei.</b> Bisher gibt es balki strom nur für ${esc(gebietText(D))}. Weitere Kieze kommen dazu – prüf sonst die Schreibweise.`);
+      status.textContent = 'Keine passende Adresse im bisherigen Gebiet.';
     } else {
-      if (treffer.nrFehlt) info('Diese Hausnummer kennen wir hier nicht. Meintest du:');
+      if (treffer.nrFehlt) info('Diese Hausnummer gibt es hier nicht. Meintest du:');
       treffer.forEach((a, i) => {
         const li = document.createElement('li');
         li.id = `vorschlag-${i}`; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', 'false');

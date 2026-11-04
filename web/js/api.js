@@ -48,18 +48,18 @@ export async function ertrag(anfrage, {signal} = {}) {
     if (signal && signal.aborted) throw e;
     throw new ErtragsFehler(ctl.signal.aborted
       ? 'Die Rechnung hat zu lange gedauert. Versuch es bitte gleich noch einmal.'
-      : 'Wir erreichen unseren Rechner gerade nicht. Prüf deine Internetverbindung und versuch es noch einmal.', 'netz');
+      : 'Der Server ist gerade nicht erreichbar. Prüf deine Internetverbindung und versuch es noch einmal.', 'netz');
   } finally { clearTimeout(timer); }
   let d = null;
   try { d = await r.json(); } catch { /* keine JSON-Antwort */ }
   if (r.status === 429) throw new ErtragsFehler('Gerade rechnen sehr viele gleichzeitig. Versuch es bitte in einer Minute noch einmal.', 'voll');
-  if (r.status === 503) throw new ErtragsFehler('Unser Rechner ist gerade ausgelastet. Versuch es bitte in einer Minute noch einmal.', 'voll');
+  if (r.status === 503) throw new ErtragsFehler('Der Server ist gerade ausgelastet. Versuch es bitte in einer Minute noch einmal.', 'voll');
   if (!r.ok || !d || d.ok === false) {
     throw new ErtragsFehler((d && typeof d.fehler === 'string' && d.fehler.length < 300) ? d.fehler
-      : 'Für diese Stelle können wir gerade nichts rechnen. Tipp bitte etwas anders auf deinen Balkon.', 'eingabe');
+      : 'Für diese Stelle klappt die Rechnung gerade nicht. Tipp bitte etwas anders auf deinen Balkon.', 'eingabe');
   }
   if (!Array.isArray(d.stunde_wh) || d.stunde_wh.length < 8760 || !Number.isFinite(d.kwh_jahr)) {
-    throw new ErtragsFehler('Die Antwort unseres Rechners war unvollständig. Versuch es bitte noch einmal.', 'antwort');
+    throw new ErtragsFehler('Die Antwort des Servers war unvollständig. Versuch es bitte noch einmal.', 'antwort');
   }
   return d;
 }

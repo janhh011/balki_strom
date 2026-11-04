@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-kaEog0AsPo4/9apXRMvp5eF3zpfBg9ltlJNNm2KUPio='; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>balki strom – Solarstrom vom eigenen Balkon</title>
-<meta name="description" content="Adresse eingeben, Balkon antippen: Wir zeigen dir, wie viel Strom und Geld ein Balkonkraftwerk an deinem Berliner Balkon bringt – und wie einfach es geht. Kostenlos, ohne Anmeldung, ohne Tracking.">
+<meta name="description" content="Adresse eingeben, Balkon antippen – und du siehst, wie viel Strom und Geld ein Balkonkraftwerk an deinem Berliner Balkon bringt – und wie einfach es geht. Kostenlos, ohne Anmeldung, ohne Tracking.">
 <meta name="theme-color" content="#F2F5FA">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
@@ -91,7 +91,7 @@
       <p class="viewer-hinweis" id="viewer-hinweis" role="status" hidden></p>
       <div class="ohne3d" id="ohne3d" hidden>
         <h3 id="ohne3d-titel">Die 3D-Ansicht geht hier leider nicht</h3>
-        <p id="ohne3d-text">Kein Problem – wir können grob schätzen. Wohin zeigt dein Balkon?</p>
+        <p id="ohne3d-text">Kein Problem – eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?</p>
         <div class="chips" role="radiogroup" aria-labelledby="ohne3d-titel" id="richtungen"></div>
       </div>
       <p class="haus-fuss"><button class="link" type="button" id="ohne3d-link">Ich finde meinen Balkon nicht – grob schätzen</button></p>
@@ -101,10 +101,10 @@
     <section class="ergebnis" id="ergebnis" aria-labelledby="ergebnis-titel">
       <div class="karte warten" data-e="warten">
         <p class="label">So geht's</p>
-        <p class="warten-text">Such im Bild dein Fenster und tippe auf deinen Balkon. Dann rechnen wir Sonne und Schatten für genau diese Stelle durch.</p>
+        <p class="warten-text">Such im Bild dein Fenster und tippe auf deinen Balkon. Dann werden Sonne und Schatten für genau diese Stelle durchgerechnet.</p>
       </div>
       <div class="karte laden" data-e="laden" hidden role="status">
-        <span class="spinner" aria-hidden="true"></span><span data-e="ladetext">Wir rechnen …</span>
+        <span class="spinner" aria-hidden="true"></span><span data-e="ladetext">Wird gerechnet …</span>
       </div>
       <div class="karte fehler" data-e="fehler" hidden role="alert">
         <p data-e="fehlertext"></p>
@@ -126,7 +126,7 @@
           <p class="ek-kosten" data-e="kosten"></p>
           <p class="ek-unter" data-e="unter" hidden></p>
           <a class="btn btn-voll" href="#schritte">So einfach geht's weiter</a>
-          <p class="ek-link"><a href="#rechnung" id="link-rechnung">So rechnen wir&nbsp;→</a></p>
+          <p class="ek-link"><a href="#rechnung" id="link-rechnung">So wird gerechnet&nbsp;→</a></p>
         </div>
         <p class="lang" data-e="lang"></p>
         <ul class="hinweise" data-e="hinweise" hidden></ul>
@@ -156,7 +156,7 @@
         </figure>
 
         <details class="rechnung" id="rechnung">
-          <summary>So haben wir gerechnet – und was du ändern kannst</summary>
+          <summary>So wird gerechnet – und was du ändern kannst</summary>
           <div class="rechnung-in">
             <div class="feld">
               <label for="preis">Dein Strompreis</label>
@@ -174,7 +174,7 @@
             </div>
             <dl class="annahmen" data-e="annahmen"></dl>
             <p class="klein" data-e="wetter"></p>
-            <p class="klein">Wir verkaufen nichts und bekommen keine Provision. Alle Werte sind Schätzungen, keine Zusage.</p>
+            <p class="klein">Hier wird nichts verkauft, und es gibt keine Provision. Alle Werte sind Schätzungen, keine Zusage.</p>
           </div>
         </details>
       </div>
@@ -204,7 +204,7 @@
               <button class="btn btn-zweit" type="button" id="mail-kopieren">Text kopieren</button>
             </div>
             <p class="klein" id="mail-status" role="status"></p>
-            <p class="klein">Die E-Mail entsteht nur in deinem Browser. Wir sehen und speichern nichts davon.</p>
+            <p class="klein">Die E-Mail entsteht nur in deinem Browser. Diese Seite sieht und speichert nichts davon.</p>
           </div>
         </li>
         <li class="schritt">
@@ -259,7 +259,7 @@
     <img class="fuss-logo" src="bilder/logo-dunkel.svg" alt="balki strom" width="174" height="32">
     <h2 class="sr">Über das Projekt</h2>
     <p class="fuss-claim">Kostenlos · Ohne&nbsp;Anmeldung · Open&nbsp;Source (AGPL-3.0)</p>
-    <p class="fuss-text">Ein nicht kommerzielles Projekt von <a href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer">Jan-Hendrik Höltkemeier</a>. Wir verkaufen nichts, bekommen keine Provision, setzen keine Cookies und tracken niemanden. Alle Werte sind Schätzungen.</p>
+    <p class="fuss-text">Ein nicht kommerzielles Projekt von <a href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer">Jan-Hendrik Höltkemeier</a>. Kein Verkauf, keine Provision, keine Cookies, kein Tracking. Alle Werte sind Schätzungen.</p>
     <p class="fuss-person">Kontakt zum Autor: <a href="https://www.linkedin.com/in/jan-hendrik-h%C3%B6ltkemeier/" target="_blank" rel="noopener noreferrer">LinkedIn</a> · <a href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer">GitHub</a></p>
     <nav aria-label="Rechtliches und Projekt">
       <ul class="fuss-nav">

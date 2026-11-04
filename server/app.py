@@ -68,7 +68,7 @@ def pruefe_ertrag(d, kacheln):
         raise EingabeFehler("Ungültige Anfrage.")
     kid = d.get("kachel")
     if not isinstance(kid, str) or kid not in kacheln:
-        raise EingabeFehler("Dieses Gebiet kennen wir noch nicht.")
+        raise EingabeFehler("Für dieses Gebiet gibt es noch kein 3D-Modell.")
     module = d.get("module", 2)
     if module not in (1, 2) or isinstance(module, bool):
         raise EingabeFehler("Bitte 1 oder 2 Module wählen.")

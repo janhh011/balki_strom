@@ -118,7 +118,7 @@ class Rechner:
                 self._kacheln.move_to_end(kid)
                 return self._kacheln[kid]
         if kid not in self.kachel_ids():
-            raise EingabeFehler("Dieses Gebiet kennen wir noch nicht.")
+            raise EingabeFehler("Für dieses Gebiet gibt es noch kein 3D-Modell.")
         k = Kachel(os.path.join(self.work_dir, kid))
         with self._lock:
             self._kacheln[kid] = k
@@ -132,14 +132,14 @@ class Rechner:
         idx = k.nah(p, UMKREIS_WAND)
         idx = idx[~k.tri_baum[idx]]
         if len(idx) == 0:
-            raise EingabeFehler("An dieser Stelle finden wir keine Hauswand. Tippe bitte direkt auf deinen Balkon.")
+            raise EingabeFehler("An dieser Stelle ist keine Hauswand zu finden. Tippe bitte direkt auf deinen Balkon.")
         nn = k.tri_n[idx]
         senkrecht = np.abs(nn[:, 2]) < 0.35
         h = nn[:, :2]
         hl = np.linalg.norm(h, axis=1)
         ok = senkrecht & (hl > 0.5)
         if np.minimum(k.tri_a[idx][ok], (2 * UMKREIS_WAND) ** 2).sum() < 0.5:
-            raise EingabeFehler("Hier sehen wir keine senkrechte Wand. Tippe bitte auf die Wand oder das Geländer deines Balkons.")
+            raise EingabeFehler("Hier ist keine senkrechte Wand. Tippe bitte auf die Wand oder das Geländer deines Balkons.")
         h = h[ok] / hl[ok, None]
         a = np.minimum(k.tri_a[idx][ok], (2 * UMKREIS_WAND) ** 2)
         # Doppelwinkel-Mittel: Richtung unabhängig vom Vorzeichen (Innen-/Außenseite einzelner Dreiecke)
@@ -256,7 +256,7 @@ class Rechner:
         rand_abstand = min(mitte[0] - xmin, xmax - mitte[0], mitte[1] - ymin, ymax - mitte[1])
         rand = (not k.umgebung) and rand_abstand < 60
         if rand:
-            hinweise.append("Dein Balkon liegt nah am Rand unseres 3D-Modells. Schatten von weiter entfernten "
+            hinweise.append("Dein Balkon liegt nah am Rand des 3D-Modells. Schatten von weiter entfernten "
                             "Häusern fehlen vielleicht – der Ertrag kann etwas niedriger sein.")
         ergebnis = dict(
             ok=True, kachel=kid, azimut=round(az, 1), richtung=richtung_text(az),

@@ -5,7 +5,7 @@
 Bitte melde Sicherheitslücken **nicht** in einem öffentlichen Issue, sondern vertraulich über GitHub:
 [Security Advisories → Report a vulnerability](https://github.com/janhh011/balki_strom/security/advisories/new).
 
-Hilfreich sind: betroffene Datei oder URL, Schritte zum Nachvollziehen, mögliche Auswirkung. Ich antworte so bald wie möglich; das Projekt wird privat betreut. Bitte veröffentliche Details erst, wenn die Lücke behoben ist oder wir uns auf einen Zeitpunkt geeinigt haben.
+Hilfreich sind: betroffene Datei oder URL, Schritte zum Nachvollziehen, mögliche Auswirkung. Ich antworte so bald wie möglich; das Projekt wird privat betreut. Bitte veröffentliche Details erst, wenn die Lücke behoben ist oder ein Zeitpunkt vereinbart ist.
 
 ## Umfang
 
