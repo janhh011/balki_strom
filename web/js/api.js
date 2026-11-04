@@ -1,0 +1,181 @@
+// Anbindung an POST /api/ertrag (Vertrag: docs/ARCHITEKTUR.md)
+// ---------------------------------------------------------------
+// ertrag(anfrage)  -> Antwort wie /api/ertrag
+//   Mit ?attrappe=1 oder ?attrappe=api kommt statt des Servers eine realistische, lokal erzeugte Antwort
+//   (8760 Stundenwerte, Horizont usw.), damit die Seite ohne Server getestet werden kann.
+// schaetzeJahr(...) -> dieselbe Form, synthetisch (auch für die grobe Schätzung ohne 3D)
+
+const ZEITLIMIT_MS = 45000;
+const BERLIN = {lat: 52.50, lon: 13.40};
+const RICHTUNGEN = ['Nord', 'Nordost', 'Ost', 'Südost', 'Süd', 'Südwest', 'West', 'Nordwest'];
+// Globalstrahlung Berlin, kWh/m² je Monat (langjähriges Mittel, gerundet; DWD-Größenordnung ~1.020 kWh/m²·a)
+const GHI_MONAT = [19, 34, 72, 118, 152, 158, 157, 134, 90, 52, 23, 14];
+const MODUL = {breite: 1.72, hoehe: 1.13, wp: 430};
+
+export class ErtragsFehler extends Error {
+  constructor(text, art = 'fehler') { super(text); this.art = art; }
+}
+
+export const richtungAus = az => RICHTUNGEN[Math.round((((az % 360) + 360) % 360) / 45) % 8];
+export const azimutAus = (nx, ny) => ((Math.atan2(nx, ny) * 180 / Math.PI) + 360) % 360;
+
+function attrappeAktiv() {
+  const a = new URLSearchParams(location.search).get('attrappe');
+  return a === '1' || a === 'api';
+}
+
+export async function ertrag(anfrage, {signal} = {}) {
+  const body = {
+    kachel: String(anfrage.kachel), x: +anfrage.x, y: +anfrage.y, z: +anfrage.z,
+    nx: +anfrage.nx, ny: +anfrage.ny, module: anfrage.module === 1 ? 1 : 2,
+    aufstellung: anfrage.aufstellung === 'geneigt' ? 'geneigt' : 'senkrecht',
+  };
+  if (attrappeAktiv()) {
+    await new Promise(r => setTimeout(r, 700));
+    if (signal && signal.aborted) throw new DOMException('abgebrochen', 'AbortError');
+    return attrappe(body);
+  }
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ZEITLIMIT_MS);
+  if (signal) signal.addEventListener('abort', () => ctl.abort(), {once: true});
+  let r;
+  try {
+    r = await fetch('api/ertrag', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body),
+      signal: ctl.signal, credentials: 'omit', cache: 'no-store',
+    });
+  } catch (e) {
+    if (signal && signal.aborted) throw e;
+    throw new ErtragsFehler(ctl.signal.aborted
+      ? 'Die Rechnung hat zu lange gedauert. Versuch es bitte gleich noch einmal.'
+      : 'Wir erreichen unseren Rechner gerade nicht. Prüf deine Internetverbindung und versuch es noch einmal.', 'netz');
+  } finally { clearTimeout(timer); }
+  let d = null;
+  try { d = await r.json(); } catch { /* keine JSON-Antwort */ }
+  if (r.status === 429) throw new ErtragsFehler('Gerade rechnen sehr viele gleichzeitig. Versuch es bitte in einer Minute noch einmal.', 'voll');
+  if (r.status === 503) throw new ErtragsFehler('Unser Rechner ist gerade ausgelastet. Versuch es bitte in einer Minute noch einmal.', 'voll');
+  if (!r.ok || !d || d.ok === false) {
+    throw new ErtragsFehler((d && typeof d.fehler === 'string' && d.fehler.length < 300) ? d.fehler
+      : 'Für diese Stelle können wir gerade nichts rechnen. Tipp bitte etwas anders auf deinen Balkon.', 'eingabe');
+  }
+  if (!Array.isArray(d.stunde_wh) || d.stunde_wh.length < 8760 || !Number.isFinite(d.kwh_jahr)) {
+    throw new ErtragsFehler('Die Antwort unseres Rechners war unvollständig. Versuch es bitte noch einmal.', 'antwort');
+  }
+  return d;
+}
+
+// ---------------------------------------------------------------- Attrappe
+function seedAus(...zahlen) { let h = 2166136261; for (const z of zahlen) { h ^= Math.round(z * 10); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+function attrappe(b) {
+  const az = azimutAus(b.nx, b.ny);
+  const s = seedAus(b.x, b.y);
+  const R = rng(s);
+  // Horizont: Häuser gegenüber (~16–24°) plus ein Baum vor dem Balkon
+  const gebaeude = [], baeume = [];
+  const hBasis = 14 + R() * 10, baumAz = (az + (R() - 0.5) * 80 + 360) % 360, baumH = 10 + R() * 18;
+  for (let i = 0; i < 180; i++) {
+    const a = i * 2, d = Math.abs(((a - az + 540) % 360) - 180);              // Winkel zur Blickrichtung
+    gebaeude.push(+(d < 100 ? hBasis * (1 - 0.3 * Math.cos(a / 15)) * (d < 60 ? 1 : (100 - d) / 40) : 0).toFixed(1));
+    const db = Math.abs(((a - baumAz + 540) % 360) - 180);
+    baeume.push(+(db < 14 ? baumH * Math.cos(db / 14 * Math.PI / 2) : 0).toFixed(1));
+  }
+  const geschoss = Math.max(0, Math.round((b.z - 36) / 3));
+  const d = schaetzeJahr({azimut: az, aufstellung: b.aufstellung, module: b.module, horizont: {schritt_grad: 2, gebaeude, baeume}, himmelSicht: 0.75, seed: s});
+  return {
+    ok: true, kachel: b.kachel, azimut: +az.toFixed(1), richtung: richtungAus(az),
+    hoehe_ueber_boden_m: +(b.z - 34).toFixed(1), geschoss,
+    module: modulEcken(b, b.module, b.aufstellung),
+    ...d,
+    rand: false,
+    hinweise: ['Testdaten: Diese Zahlen stammen aus der Attrappe, nicht aus dem 3D-Modell.'],
+    wetter: 'synthetisches Referenzjahr Berlin (Attrappe)',
+    annahmen: {verluste: 0.14, albedo: 0.2},
+  };
+}
+
+export function modulEcken(p, anzahl, aufstellung) {
+  const n = Math.hypot(p.nx, p.ny) || 1, nx = p.nx / n, ny = p.ny / n, tx = -ny, ty = nx;
+  const W = MODUL.breite, H = MODUL.hoehe, gap = 0.04, ges = anzahl * W + (anzahl - 1) * gap;
+  const neig = aufstellung === 'geneigt' ? 30 * Math.PI / 180 : 0;
+  const z0 = p.z - 0.2, abst = 0.12;
+  const out = [];
+  for (let i = 0; i < anzahl; i++) {
+    const a = -ges / 2 + i * (W + gap), e = a + W;
+    const unten = abst + H * Math.sin(neig), oben = abst, zOben = z0 + H * Math.cos(neig);
+    const P = (t, o, z) => [+(p.x + tx * t + nx * o).toFixed(2), +(p.y + ty * t + ny * o).toFixed(2), +z.toFixed(2)];
+    out.push([P(a, unten, z0), P(e, unten, z0), P(e, oben, zOben), P(a, oben, zOben)]);
+  }
+  return out;
+}
+
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+
+// Sonnenstand (vereinfachter NOAA-Algorithmus); ms = UTC-Zeitstempel -> {el, az} in Grad (az von Nord im Uhrzeigersinn)
+function sonne(ms, lat, lon) {
+  const RAD = Math.PI / 180, d = ms / 86400000 + 2440587.5 - 2451545.0;
+  const g = (357.529 + 0.98560028 * d) * RAD, q = 280.459 + 0.98564736 * d;
+  const L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * RAD, e = (23.439 - 0.00000036 * d) * RAD;
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L)), dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const gmst = (18.697374558 + 24.06570982441908 * d) % 24;
+  const H = ((gmst * 15 + lon) * RAD - ra);
+  const la = lat * RAD;
+  const el = Math.asin(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(H));
+  const az = Math.atan2(-Math.sin(H), Math.tan(dec) * Math.cos(la) - Math.sin(la) * Math.cos(H));
+  return {el: el / RAD, az: ((az / RAD) + 360) % 360};
+}
+
+// Synthetisches Ertragsjahr (2025, Zeitachse wie lastgang.js: Stunde 0 = 1. Januar 00:00 MEZ)
+export function schaetzeJahr({azimut, aufstellung = 'senkrecht', module = 2, horizont = null, himmelSicht = 1, verschattung = 0, seed = 7}) {
+  const R = rng(seed), RAD = Math.PI / 180;
+  const beta = (aufstellung === 'geneigt' ? 60 : 90) * RAD, gam = azimut;
+  const wp = module * MODUL.wp, VERLUST = 0.14, MAXW = 800;
+  const t0 = Date.UTC(2025, 0, 1) - 3600e3;
+  const tage = Array.from({length: 365}, () => 0.12 + 0.88 * R() ** 0.8);  // Klarheit je Tag
+  const sonnen = new Array(8760), roh = new Float64Array(8760);
+  const monatRoh = new Float64Array(12);
+  for (let h = 0; h < 8760; h++) {
+    const ms = t0 + (h + 0.5) * 3600e3, s = sonne(ms, BERLIN.lat, BERLIN.lon);
+    sonnen[h] = s;
+    if (s.el <= 0) continue;
+    const sinEl = Math.sin(s.el * RAD), klar = 1098 * sinEl * Math.exp(-0.057 / Math.max(sinEl, 0.03));
+    roh[h] = klar * tage[Math.floor(h / 24)];
+    monatRoh[new Date(ms + 3600e3).getUTCMonth()] += roh[h] / 1000;
+  }
+  const horiz = (az, el) => {
+    if (!horizont) return false;
+    const i = Math.round(az / (horizont.schritt_grad || 2)) % horizont.gebaeude.length;
+    return el < Math.max(horizont.gebaeude[i] || 0, horizont.baeume[i] || 0);
+  };
+  const stunde = new Array(8760), monat = new Array(12).fill(0);
+  let kwh = 0, kwhFrei = 0, sh = 0, shFrei = 0;
+  for (let h = 0; h < 8760; h++) {
+    const s = sonnen[h];
+    if (s.el <= 0) { stunde[h] = 0; continue; }
+    const m = new Date(t0 + (h + 0.5) * 3600e3 + 3600e3).getUTCMonth();
+    const ghi = roh[h] * GHI_MONAT[m] / monatRoh[m];
+    const kday = tage[Math.floor(h / 24)];
+    const dhi = ghi * Math.min(1, Math.max(0.15, 1.05 - 0.85 * kday));
+    const sinEl = Math.sin(s.el * RAD), dni = Math.min(1000, (ghi - dhi) / Math.max(sinEl, 0.05));
+    const cosT = sinEl * Math.cos(beta) + Math.cos(s.el * RAD) * Math.sin(beta) * Math.cos((s.az - gam) * RAD);
+    const direkt = dni * Math.max(0, cosT), diffus = dhi * (1 + Math.cos(beta)) / 2, boden = ghi * 0.2 * (1 - Math.cos(beta)) / 2;
+    const zu = horiz(s.az, s.el);
+    const poaFrei = direkt + diffus + boden;
+    const poa = (zu ? 0 : direkt) * (1 - verschattung) + diffus * himmelSicht + boden;
+    if (cosT > 0 && s.el > 2) { shFrei++; if (!zu) sh++; }
+    const p = w => Math.min(MAXW, w / 1000 * wp * (1 - VERLUST));
+    stunde[h] = Math.round(p(poa));
+    kwh += stunde[h] / 1000; kwhFrei += p(poaFrei) / 1000; monat[m] += stunde[h] / 1000;
+  }
+  return {
+    modul: {anzahl: module, wp_je_modul: MODUL.wp, wp: wp, breite_m: MODUL.breite, hoehe_m: MODUL.hoehe},
+    kwh_jahr: +kwh.toFixed(1), kwh_jahr_frei: +kwhFrei.toFixed(1),
+    verschattung: +Math.max(0, 1 - kwh / kwhFrei).toFixed(3),
+    monat_kwh: monat.map(v => +v.toFixed(1)), stunde_wh: stunde,
+    sonnenstunden: sh, sonnenstunden_frei: shFrei,
+    horizont: horizont || {schritt_grad: 2, gebaeude: new Array(180).fill(0), baeume: new Array(180).fill(0)},
+  };
+}
