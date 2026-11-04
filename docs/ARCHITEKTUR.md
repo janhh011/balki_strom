@@ -80,6 +80,18 @@ viewer.zeigeMarker(x, y, z | null); // Markierung am getippten Punkt (null = weg
 viewer.zeigeModule(module | null);  // module: [[[x,y,z] × 4 Ecken], ...] in EPSG:25833 – Solarmodule einblenden
 viewer.setzeSonne(date);            // Sonnenstand (Berlin) für Datum/Uhrzeit, mit Schatten
 viewer.beiStatus(cb);               // cb({ladend: bool, fortschritt: 0..1, text}) für Ladeanzeige
+
+// Balkon als Rahmen aufziehen (Standard nach zeigeOrt):
+viewer.setzeModus('rahmen' | 'drehen');   // 'rahmen': ein Finger/linke Maustaste zieht einen Rahmen auf der Wand,
+                                          // zwei Finger/rechte Maustaste/Mausrad bewegen weiter die Ansicht;
+                                          // 'drehen': wie bisher (ein Finger dreht). Kurzes Tippen = beiAuswahl in beiden Modi.
+viewer.beiRahmen(cb);               // cb({kachel, x, y, z, nx, ny, nz, breite_m, hoehe_m, a:[x,y,z], b:[x,y,z]})
+                                    // x/y/z = Mitte der Rahmen-Unterkante auf der Wand, breite_m entlang der Wand
+viewer.zeigeRahmen(rahmen | null);  // aufgezogenen Rahmen (a, b, nx, ny) weiter anzeigen bzw. entfernen
+
+// Sonnenverlauf mit Schatten (auch auf 'niedrig': dann günstige Schatten nur im Nahbereich, solange aktiv):
+viewer.spieleSonne({tag: Date, von: 6, bis: 21, dauer_s: 8, beiZeit: cb(date)}); // -> {stopp()}
+viewer.setzeSonne(date | null);     // null = Sonnenansicht beenden (Schatten auf 'niedrig' wieder aus)
 viewer.entsorge();
 ```
 
@@ -90,7 +102,10 @@ Anfrage (JSON, höchstens 1 KB):
 { "kachel": "3858_58171", "x": 386001.2, "y": 5817300.4, "z": 52.3, "nx": 0.02, "ny": -0.99,
   "module": 2, "aufstellung": "senkrecht" }
 ```
-`module`: 1 oder 2. `aufstellung`: `"senkrecht"` (am Geländer) oder `"geneigt"` (30° ausgestellt).
+`module`: 1 oder 2, optional – fehlt es und ist `breite_m` gesetzt, wählt der Server 1 oder 2 nach der Breite.
+`breite_m` (optional, 0,5–15): Breite des aufgezogenen Rahmens. `aufstellung`: `"senkrecht"` (am Geländer) oder
+`"geneigt"` (30° ausgestellt). Die Antwort enthält dann `modul.balkon_breite_m` und `modul.passen`
+(Zahl der 1,72-m-Standardmodule, die in die Breite passen).
 
 Antwort 200:
 ```json

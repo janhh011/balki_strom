@@ -110,6 +110,15 @@ def test_geneigt_mehr_ertrag_frei():
     assert g["kwh_jahr_frei"] > s["kwh_jahr_frei"]
 
 
+def test_breite_bestimmt_module():
+    r = rechner().ertrag("test", X0 + 10, Y0 - 1.5, Z0 + 6.5, 0.0, -1.0, None, "senkrecht", breite=2.4)
+    assert r["modul"]["anzahl"] == 1 and r["modul"]["passen"] == 1, r["modul"]
+    r = rechner().ertrag("test", X0 + 10, Y0 - 1.5, Z0 + 6.5, 0.0, -1.0, None, "senkrecht", breite=4.0)
+    assert r["modul"]["anzahl"] == 2 and r["modul"]["passen"] == 2, r["modul"]
+    r = rechner().ertrag("test", X0 + 10, Y0 - 1.5, Z0 + 6.5, 0.0, -1.0, 2, "senkrecht", breite=2.4)
+    assert r["modul"]["anzahl"] == 2 and any("nur ein Standardmodul" in h for h in r["hinweise"]), r["hinweise"]
+
+
 def test_dach_abgelehnt():
     try:
         rechner().ertrag("test", X0 + 10, Y0 + 5, Z0 + 15, 0.0, 0.0, 1, "senkrecht")

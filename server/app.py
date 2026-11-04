@@ -39,7 +39,7 @@ LIMITS = {                                                       # (Anzahl, Zeit
     "gesamt": (int(os.environ.get("LIMIT_ERTRAG_GESAMT_STUNDE", 1500)), 3600),   # alle Nutzer zusammen
     "lesen": (int(os.environ.get("LIMIT_LESEN_MINUTE", 600)), 60),
 }
-FELDER = {"kachel", "x", "y", "z", "nx", "ny", "module", "aufstellung"}
+FELDER = {"kachel", "x", "y", "z", "nx", "ny", "module", "aufstellung", "breite_m"}
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("application/json", ".json")
 mimetypes.add_type("image/webp", ".webp")
@@ -70,15 +70,16 @@ def pruefe_ertrag(d, kacheln):
     kid = d.get("kachel")
     if not isinstance(kid, str) or kid not in kacheln:
         raise EingabeFehler("Für dieses Gebiet gibt es noch kein 3D-Modell.")
-    module = d.get("module", 2)
-    if module not in (1, 2) or isinstance(module, bool):
+    module = d.get("module")
+    if module is not None and (module not in (1, 2) or isinstance(module, bool)):
         raise EingabeFehler("Bitte 1 oder 2 Module wählen.")
     aufstellung = d.get("aufstellung", "senkrecht")
     if aufstellung not in ("senkrecht", "geneigt"):
         raise EingabeFehler("Ungültige Anfrage.")
     return dict(kid=kid, x=zahl(d.get("x"), 360000, 420000), y=zahl(d.get("y"), 5790000, 5850000),
                 z=zahl(d.get("z"), -50, 500), nx=zahl(d.get("nx"), -1.01, 1.01), ny=zahl(d.get("ny"), -1.01, 1.01),
-                anzahl=int(module), aufstellung=aufstellung)
+                anzahl=None if module is None else int(module), aufstellung=aufstellung,
+                breite=None if d.get("breite_m") is None else zahl(d.get("breite_m"), 0.5, 15))
 
 
 class Begrenzer:
@@ -136,7 +137,8 @@ class App:
             raise TimeoutError
         try:
             t = time.time()
-            r = self.rechner.ertrag(e["kid"], e["x"], e["y"], e["z"], e["nx"], e["ny"], e["anzahl"], e["aufstellung"])
+            r = self.rechner.ertrag(e["kid"], e["x"], e["y"], e["z"], e["nx"], e["ny"], e["anzahl"], e["aufstellung"],
+                                    e["breite"])
             log(f"Ertrag {e['kid']}: {r['kwh_jahr']:.0f} kWh/a, {r['richtung']}, {time.time() - t:.1f} s")
             return r
         finally:

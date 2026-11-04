@@ -238,7 +238,16 @@ class Rechner:
         return module, mitte, oben, hinweise
 
     # ------------------------------------------------------------ Ertrag
-    def ertrag(self, kid, x, y, z, nx, ny, anzahl=2, aufstellung="senkrecht"):
+    def ertrag(self, kid, x, y, z, nx, ny, anzahl=None, aufstellung="senkrecht", breite=None):
+        """breite: vom Nutzer aufgezogene Balkonbreite in m (optional). anzahl None = aus der Breite (1 oder 2)."""
+        m = ph.MODUL
+        passen = None
+        if breite is not None:
+            if not 0.5 <= breite <= 15:
+                raise EingabeFehler("Der Rahmen ist zu klein oder zu groß. Zieh ihn bitte über die Breite deines Balkons.")
+            passen = int(math.floor((breite + m["gap"]) / (m["w"] + m["gap"])))
+        if anzahl is None:
+            anzahl = 2 if passen is None else max(1, min(2, passen))
         if anzahl not in (1, 2):
             raise EingabeFehler("Bitte 1 oder 2 Module wählen.")
         if aufstellung not in ("senkrecht", "geneigt"):
@@ -251,7 +260,7 @@ class Rechner:
         if hl < 0.3:
             raise EingabeFehler("Das ist ein Dach oder Boden. Tippe bitte auf die Wand oder das Geländer deines Balkons.")
         schluessel = (kid, round(x * 4), round(y * 4), round(z * 4), round(math.degrees(math.atan2(ny, nx)) / 2),
-                      anzahl, aufstellung)
+                      anzahl, aufstellung, None if breite is None else round(breite * 4))
         with self._lock:
             jetzt = time.monotonic()
             while self._ergebnisse and next(iter(self._ergebnisse.values()))[0] < jetzt - ERGEBNIS_DAUER:
@@ -261,6 +270,10 @@ class Rechner:
         p = np.array([x, y, z], float)
         n = self.wand(k, p, np.array([nx / hl, ny / hl]))
         module, mitte, oben, hinweise = self.balkon(k, p, n, anzahl, aufstellung == "geneigt")
+        if passen is not None and anzahl > passen:
+            hinweise.append(f"Dein Balkon ist etwa {breite:.1f} m breit".replace(".", ",")
+                            + (". Dort passt rechnerisch kein Standardmodul (1,72 m); ein kleineres Modul bringt etwas weniger."
+                               if passen == 0 else ". Dort passt rechnerisch nur ein Standardmodul."))
         geo = dict(module=module, n=n, vorschlag=dict(wp_modul=ph.MODUL["wp"]))
         # Hindernisse vor der Wand im Umkreis des Horizonts
         # nur Rasterzellen vor der Wand (Halbebene) im Umkreis lesen
@@ -287,13 +300,14 @@ class Rechner:
         rand = (not k.umgebung) and rand_abstand < 60
         if rand:
             hinweise.append("Dein Balkon liegt nah am Rand des 3D-Modells. Schatten von weiter entfernten "
-                            "Häusern fehlen vielleicht – der Ertrag kann etwas niedriger sein.")
+                            "Häusern fehlen vielleicht, der Ertrag kann etwas niedriger sein.")
         ergebnis = dict(
             ok=True, kachel=kid, azimut=round(az, 1), richtung=richtung_text(az),
             hoehe_ueber_boden_m=round(hoehe, 1), geschoss=int(max(0, round(hoehe / GESCHOSS_HOEHE))),
             module=[m["ecken"] for m in module],
             modul=dict(anzahl=anzahl, wp_je_modul=wp_modul, wp=anzahl * wp_modul,
-                       breite_m=ph.MODUL["w"], hoehe_m=ph.MODUL["h"]),
+                       breite_m=ph.MODUL["w"], hoehe_m=ph.MODUL["h"],
+                       balkon_breite_m=None if breite is None else round(breite, 2), passen=passen),
             kwh_jahr=round(kwh, 1), kwh_jahr_frei=round(kwh_frei, 1),
             verschattung=round(max(0.0, 1 - kwh / max(kwh_frei, 1e-6)), 3),
             monat_kwh=[round(float(v), 1) for v in monat],
