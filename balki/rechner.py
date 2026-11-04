@@ -181,18 +181,22 @@ class Rechner:
             vorn = 0.0
         vorn = float(np.clip(vorn, 0.0, 3.5))
         # Oberkante: höchster Punkt nahe der Vorderkante, höchstens 1,3 m über dem Tipp-Punkt
-        kante = band & (o > vorn - 0.35)
+        kante = (np.abs(u) < 0.9) & (z > p[2] - 1.3) & (z < p[2] + 1.3) & (o > vorn - 0.35) & (o < 3.5)
         if kante.sum() >= 10:
             oben = float(np.percentile(z[kante], 98))
         else:
             oben = p[2] + 0.5
         oben = float(np.clip(oben, p[2] - 0.2, p[2] + 1.3))
-        # Wand ohne Vorsprung: kein Balkon erkannt
-        wand_ab = (np.abs(u) < 0.9) & (np.abs(z - p[2]) < 1.5)
-        wand_o = float(np.percentile(o[wand_ab], 20)) if wand_ab.sum() >= 20 else 0.0
-        if vorn - wand_o < 0.25:
-            hinweise.append("Hier haben wir keinen vorstehenden Balkon erkannt. Wir rechnen trotzdem mit "
-                            "Modulen an dieser Stelle der Wand.")
+        # Balkon erkannt, wenn die Wand in irgendeiner Höhe zwischen 1,5 m unter und 2,5 m über dem Punkt
+        # deutlich hinter der Vorderkante liegt (Brüstung vor zurückliegender Wand, Loggia, Platte)
+        zurueck = 0.0
+        for dz in np.arange(-1.5, 2.51, 0.25):
+            ebene = (np.abs(u) < 0.9) & (np.abs(z - (p[2] + dz)) < 0.15) & (o > -3.5)
+            if ebene.sum() >= 8:
+                zurueck = max(zurueck, vorn - float(np.median(o[ebene])))
+        if zurueck < 0.4:
+            hinweise.append("An dieser Stelle ist die Fassade im 3D-Modell glatt – bei verglasten oder "
+                            "eingezogenen Balkonen ist das normal. Wir rechnen mit Modulen direkt an dieser Stelle.")
         abstand = vorn + MODUL_ABSTAND
         m = ph.MODUL
         breite = anzahl * m["w"] + (anzahl - 1) * m["gap"]
