@@ -14,6 +14,7 @@ import json
 import math
 import os
 import threading
+import time
 from collections import OrderedDict
 
 import numpy as np
@@ -21,6 +22,8 @@ from pyproj import Geod, Transformer
 
 from . import physik as ph
 
+ZELLE = 20.0                  # m, Rasterweite des Punkt-Index
+ERGEBNIS_DAUER = 600          # s, so lange bleibt ein Ergebnis im Arbeitsspeicher (dann gelöscht)
 RICHTUNGEN = ["Nord", "Nordost", "Ost", "Südost", "Süd", "Südwest", "West", "Nordwest"]
 GESCHOSS_HOEHE = 3.1          # m, Mittel Altbau/Neubau
 MODUL_ABSTAND = 0.15          # m, Abstand der Module vor der Geländer-Vorderkante
@@ -40,8 +43,16 @@ class Kachel:
     def __init__(self, ordner):
         self.meta = json.load(open(os.path.join(ordner, "meta.json"), encoding="utf-8"))
         w = np.load(os.path.join(ordner, "wolke.npz"))
-        self.P = w["P"].astype(np.float64) + w["origin"]
-        self.baum = w["baum"].astype(bool)
+        P = w["P"].astype(np.float64) + w["origin"]
+        baum = w["baum"].astype(bool)
+        # Raster-Index (ZELLE m): Punkte nach Zelle sortiert, damit eine Anfrage nur die Zellen im Umkreis liest
+        self.g0 = P[:, :2].min(0)
+        ij = np.floor((P[:, :2] - self.g0) / ZELLE).astype(np.int64)
+        self.gnx, self.gny = int(ij[:, 0].max()) + 1, int(ij[:, 1].max()) + 1
+        zelle = ij[:, 1] * self.gnx + ij[:, 0]
+        o = np.argsort(zelle, kind="stable")
+        self.P, self.baum = P[o], baum[o]
+        self.start = np.searchsorted(zelle[o], np.arange(self.gnx * self.gny + 1))
         self.umgebung = bool((w["quelle"] != 0).any()) if "quelle" in w.files else False
         m = np.load(os.path.join(ordner, "mesh.npz"))
         V = m["V"].astype(np.float64) + m["origin"]
@@ -65,6 +76,17 @@ class Kachel:
         lon1, lat1 = to_ll.transform(cx, cy + 100)
         self.gn_true = Geod(ellps="WGS84").inv(lon0, lat0, lon1, lat1)[0]   # wahres Azimut der Gitter-Nordrichtung
         self.lonlat = (lon0, lat0)
+
+    def umkreis(self, x, y, r):
+        """Indizes aller Punkte in den Rasterzellen, die das Quadrat ±r um (x, y) berühren."""
+        i0, j0 = np.floor((np.array([x - r, y - r]) - self.g0) / ZELLE).astype(int)
+        i1, j1 = np.floor((np.array([x + r, y + r]) - self.g0) / ZELLE).astype(int)
+        i0, i1 = max(i0, 0), min(i1, self.gnx - 1)
+        j0, j1 = max(j0, 0), min(j1, self.gny - 1)
+        if i0 > i1 or j0 > j1:
+            return np.zeros(0, np.int64)
+        teile = [np.arange(self.start[j * self.gnx + i0], self.start[j * self.gnx + i1 + 1]) for j in range(j0, j1 + 1)]
+        return np.concatenate(teile)
 
     def gelaende(self, x, y):
         i = int(np.clip((y - self.g_y0) / self.g_res, 0, self.g_z.shape[0] - 1))
@@ -156,8 +178,10 @@ class Rechner:
             n = -n
         # Außenseite: über dem Punkt hinter der Wand liegt das Haus (Dach weit über p), davor freier Raum
         def dach(q):
-            s = (np.abs(k.P[:, 0] - q[0]) < 1.0) & (np.abs(k.P[:, 1] - q[1]) < 1.0) & ~k.baum
-            return float(k.P[s, 2].max()) if s.any() else -1e9
+            i = k.umkreis(q[0], q[1], 1.0)
+            Pi = k.P[i]
+            s = (np.abs(Pi[:, 0] - q[0]) < 1.0) & (np.abs(Pi[:, 1] - q[1]) < 1.0) & ~k.baum[i]
+            return float(Pi[s, 2].max()) if s.any() else -1e9
         vorn, hinten = dach(p[:2] + 4 * n), dach(p[:2] - 4 * n)
         if vorn > hinten + 2.5:
             n = -n
@@ -229,18 +253,24 @@ class Rechner:
         schluessel = (kid, round(x * 4), round(y * 4), round(z * 4), round(math.degrees(math.atan2(ny, nx)) / 2),
                       anzahl, aufstellung)
         with self._lock:
+            jetzt = time.monotonic()
+            while self._ergebnisse and next(iter(self._ergebnisse.values()))[0] < jetzt - ERGEBNIS_DAUER:
+                self._ergebnisse.popitem(last=False)
             if schluessel in self._ergebnisse:
-                self._ergebnisse.move_to_end(schluessel)
-                return self._ergebnisse[schluessel]
+                return self._ergebnisse[schluessel][1]
         p = np.array([x, y, z], float)
         n = self.wand(k, p, np.array([nx / hl, ny / hl]))
         module, mitte, oben, hinweise = self.balkon(k, p, n, anzahl, aufstellung == "geneigt")
         geo = dict(module=module, n=n, vorschlag=dict(wp_modul=ph.MODUL["wp"]))
         # Hindernisse vor der Wand im Umkreis des Horizonts
-        d = k.P[:, :2] - mitte[:2]
+        # nur Rasterzellen vor der Wand (Halbebene) im Umkreis lesen
+        i = k.umkreis(mitte[0] + n[0] * ph.HORIZONT_RADIUS / 2, mitte[1] + n[1] * ph.HORIZONT_RADIUS / 2,
+                      ph.HORIZONT_RADIUS / 2 + 2 * ZELLE)
+        Pi = k.P[i]
+        d = Pi[:, :2] - mitte[:2]
         sel = ((np.abs(d[:, 0]) < ph.HORIZONT_RADIUS) & (np.abs(d[:, 1]) < ph.HORIZONT_RADIUS)
-               & (k.P[:, 2] > oben - ph.MODUL["h"] - 0.5) & (d @ n > 0.2))
-        Q, qb = k.P[sel], k.baum[sel]
+               & (Pi[:, 2] > oben - ph.MODUL["h"] - 0.5) & (d @ n > 0.2))
+        Q, qb = Pi[sel], k.baum[i][sel]
         az = (math.degrees(math.atan2(n[0], n[1])) + k.gn_true) % 360
         neigung = 90.0 - ph.AUSSTELLWINKEL if aufstellung == "geneigt" else 90.0
         wp_modul = ph.WP_OPTIMIERT if aufstellung == "geneigt" else ph.MODUL["wp"]
@@ -278,7 +308,7 @@ class Rechner:
                           neigung_grad=neigung, jahr=ph.JAHR),
         )
         with self._lock:
-            self._ergebnisse[schluessel] = ergebnis
+            self._ergebnisse[schluessel] = (time.monotonic(), ergebnis)
             while len(self._ergebnisse) > 300:
                 self._ergebnisse.popitem(last=False)
         return ergebnis

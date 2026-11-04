@@ -50,7 +50,7 @@
   <nav aria-label="Inhalt dieser Seite">
     <ol class="inhalt-liste">
       <li><a href="#verantwortlich">Verantwortlicher</a></li>
-      <li><a href="#hosting">Hosting und Server-Protokolle</a></li>
+      <li><a href="#hosting">Hosting, keine Protokolle</a></li>
       <li><a href="#berechnung">Ertragsberechnung</a></li>
       <li><a href="#browser">Was nur in deinem Browser passiert</a></li>
       <li><a href="#speicher">Cookies und Speicher im Browser</a></li>
@@ -71,20 +71,14 @@
   </address>
   <p>Ein Datenschutzbeauftragter ist für dieses private Projekt gesetzlich nicht vorgeschrieben. Bei Fragen zum Datenschutz schreib einfach an die E-Mail-Adresse oben.</p>
 
-  <h2 id="hosting">2. Hosting und Server-Protokolle</h2>
+  <h2 id="hosting">2. Hosting, keine Protokolle</h2>
   <p>Die Seite läuft auf einem Server in Deutschland bei <mark class="platzhalter">[Platzhalter: Name und Anschrift des Hosting-Anbieters, Standort des Rechenzentrums]</mark>. Mit dem Anbieter besteht ein Vertrag zur Auftragsverarbeitung nach Art.&nbsp;28 DSGVO. Die Verbindung ist per TLS (HTTPS) verschlüsselt.</p>
   <p>Damit dein Browser die Seite laden kann, muss der Server deine IP-Adresse kennen. Das ist technisch unvermeidbar.</p>
-  <h3>Zugriffsprotokolle des Webservers</h3>
-  <p>Der vorgeschaltete Webserver (Reverse-Proxy) protokolliert Zugriffe, um Fehler zu finden und Angriffe abzuwehren. <mark class="platzhalter">[Zu bestätigen: tatsächliche Konfiguration des Reverse-Proxy]</mark> Gespeichert werden:</p>
-  <ul>
-    <li>deine IP-Adresse, <b>gekürzt</b> (bei IPv4 ohne das letzte Byte, bei IPv6 nur die ersten 48 Bit), sodass sie keinem Anschluss mehr zugeordnet werden kann,</li>
-    <li>Datum und Uhrzeit, aufgerufene Datei, Statuscode, übertragene Datenmenge,</li>
-    <li>Browser-Kennung (User-Agent).</li>
-  </ul>
-  <p>Diese Protokolle werden nach <b>7 Tagen</b> automatisch gelöscht <mark class="platzhalter">[Zu bestätigen]</mark>. Sie werden nicht ausgewertet, um Profile zu bilden, und nicht mit anderen Daten zusammengeführt.</p>
+  <h3>Keine Zugriffsprotokolle</h3>
+  <p>Der vorgeschaltete Webserver (Reverse-Proxy) und das Programm von balki strom schreiben <b>keine Zugriffsprotokolle</b>: Welche Seiten oder Dateien du abrufst, wird nicht aufgezeichnet. <mark class="platzhalter">[Beim Einrichten des Servers bestätigen: Reverse-Proxy ohne Access-Log, siehe docs/BETRIEB.md]</mark></p>
   <h3>Schutz vor Überlastung</h3>
-  <p>Das Programm von balki strom selbst schreibt keine IP-Adressen in Protokolle. Um zu verhindern, dass einzelne Anschlüsse den Server überlasten, zählt es Anfragen je IP-Adresse (bei IPv6 je /64-Netz). Dafür werden IP-Adresse und Zeitpunkt der Anfrage nur im Arbeitsspeicher gehalten, nie auf eine Festplatte geschrieben und beim Neustart des Dienstes verworfen; ältere Einträge werden laufend entfernt.</p>
-  <p><b>Rechtsgrundlage</b> für Hosting, Protokolle und Überlastschutz ist Art.&nbsp;6 Abs.&nbsp;1 lit. f DSGVO. Das berechtigte Interesse des Betreibers ist, die Seite sicher, stabil und ohne Missbrauch bereitzustellen.</p>
+  <p>Das Programm von balki strom selbst schreibt keine IP-Adressen in Protokolle. Um zu verhindern, dass einzelne Anschlüsse den Server überlasten, zählt es Anfragen je IP-Adresse (bei IPv6 je /56-Netz). Dafür werden IP-Adresse und Zeitpunkt der Anfrage nur im Arbeitsspeicher gehalten und nie auf eine Festplatte geschrieben. Einträge ohne Anfrage in der letzten Stunde werden laufend entfernt, spätestens beim Neustart des Dienstes ist alles weg.</p>
+  <p><b>Rechtsgrundlage</b> für Hosting und Überlastschutz ist Art.&nbsp;6 Abs.&nbsp;1 lit. f DSGVO. Das berechtigte Interesse des Betreibers ist, die Seite sicher, stabil und ohne Missbrauch bereitzustellen.</p>
 
   <h2 id="berechnung">3. Ertragsberechnung</h2>
   <p>Wenn du in der 3D-Ansicht auf deinen Balkon tippst, sendet dein Browser an den Server:</p>
@@ -93,7 +87,7 @@
     <li>die Ausrichtung der Wand an dieser Stelle,</li>
     <li>deine Auswahl: ein oder zwei Module, senkrecht oder geneigt.</li>
   </ul>
-  <p>Deine Adresse, dein Name und andere Angaben werden nicht übertragen. Der Server berechnet daraus Verschattung und Stromertrag und schickt das Ergebnis zurück. Die Anfrage wird <b>nicht gespeichert</b> und vom Betreiber keiner Person zugeordnet. Im Betriebsprotokoll des Programms steht nur, für welchen Kartenausschnitt gerechnet wurde, das Ergebnis (kWh pro Jahr, Himmelsrichtung) und die Rechenzeit – ohne IP-Adresse und ohne Koordinaten.</p>
+  <p>Deine Adresse, dein Name und andere Angaben werden nicht übertragen. Der Server berechnet daraus Verschattung und Stromertrag und schickt das Ergebnis zurück. Die Anfrage wird <b>nicht auf Festplatte gespeichert</b> und vom Betreiber keiner Person zugeordnet. Damit ein erneutes Antippen derselben Stelle schneller geht, bleibt das Ergebnis höchstens 10 Minuten im Arbeitsspeicher (ohne IP-Adresse) und wird dann gelöscht. Im Betriebsprotokoll des Programms steht nur, für welchen Kartenausschnitt gerechnet wurde, das Ergebnis (kWh pro Jahr, Himmelsrichtung) und die Rechenzeit – ohne IP-Adresse und ohne Koordinaten.</p>
   <p>Weil ein Punkt an einer Hauswand ungefähr auf eine Wohnung schließen lassen kann, behandelt der Betreiber diese Angaben trotzdem vorsichtig wie personenbezogene Daten. Rechtsgrundlage ist Art.&nbsp;6 Abs.&nbsp;1 lit. f DSGVO: Gerechnet wird, weil du die Berechnung angefordert hast.</p>
   <p>Ohne 3D-Ansicht kannst du auch nur die Himmelsrichtung deines Balkons wählen. Diese grobe Schätzung rechnet dein Browser selbst; dabei wird nichts an den Server gesendet.</p>
 

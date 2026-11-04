@@ -116,12 +116,12 @@ Hoster = Hosting-Anbieter. Platzhalter in den Seiten sind gelb markiert (`[Platz
 
 - ✅ Content-Security-Policy (Meta-Tag in allen Seiten; Unterseiten ohne Skripte:
   `script-src 'none'`), keine externen Ressourcen, `Referrer-Policy: no-referrer`.
-- ✅ Server: strenge Eingabeprüfung, max. 1 KB je Anfrage, Ratenlimits (60 Rechnungen/Stunde,
-  600 Abrufe/Minute je IP), Verbindungs- und Parallelitätsgrenzen, keine IPs in App-Logs.
-- ⬜ **Betreiber:** Die HTTP-CSP in `server/app.py` erlaubt `'unsafe-inline'` für Skripte und
-  Stile und ist damit lockerer als die Meta-CSP. Angleichen (Hash für die Importmap statt
-  `'unsafe-inline'`) oder die CSP in Caddy setzen.
-- ⬜ **Betreiber:** Sicherheits-Review (steht aus), danach Befunde abarbeiten.
+- ✅ Server: strenge Eingabeprüfung, max. 1 KB je Anfrage, Body-Lesefrist 5 s, eine Rechnung je
+  Verbindung (kein Request-Smuggling), Ratenlimits (120 Rechnungen/Stunde je IP bzw. IPv6-/56,
+  1500/Stunde gesamt, 600 Abrufe/Minute), Verbindungs- und Parallelitätsgrenzen, keine IPs in App-Logs.
+- ✅ CSP: strenge Meta-CSP je Seite (Hash der Import-Map), Header ergänzt `frame-ancestors`; für den
+  Betrieb steht die vollständige CSP im Caddyfile (`docs/BETRIEB.md`).
+- ✅ Sicherheits-Review (04.11.2026) durchgeführt, Befunde behoben; Betriebskonfiguration in `docs/BETRIEB.md`.
 - ⬜ **Betreiber:** TLS nur über Caddy (HTTPS erzwingen, HSTS), Firewall nur 80/443/SSH,
   SSH nur mit Schlüssel, automatische Sicherheitsupdates (unattended-upgrades), Python-Pakete
   (numpy, pandas, pvlib, pyproj) und three.js regelmäßig aktualisieren.

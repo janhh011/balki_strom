@@ -19,7 +19,11 @@ export class ErtragsFehler extends Error {
 export const richtungAus = az => RICHTUNGEN[Math.round((((az % 360) + 360) % 360) / 45) % 8];
 export const azimutAus = (nx, ny) => ((Math.atan2(nx, ny) * 180 / Math.PI) + 360) % 360;
 
+// Testmodus nur auf dem eigenen Rechner – auf der echten Seite zeigt ein präparierter Link keine erfundenen Zahlen
+const LOKAL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+
 function attrappeAktiv() {
+  if (!LOKAL) return false;
   const a = new URLSearchParams(location.search).get('attrappe');
   return a === '1' || a === 'api';
 }

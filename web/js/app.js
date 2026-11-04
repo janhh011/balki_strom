@@ -9,7 +9,8 @@ import { initSchritte, setzeKontext } from './schritte.js';
 
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
-const ATTRAPPE_VIEWER = Q.get('attrappe') === '1' || Q.get('attrappe') === 'viewer';
+const LOKAL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);   // Testmodus nur lokal
+const ATTRAPPE_VIEWER = LOKAL && (Q.get('attrappe') === '1' || Q.get('attrappe') === 'viewer');
 const schmal = () => matchMedia('(max-width: 999px)').matches;
 
 const st = {

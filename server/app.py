@@ -35,7 +35,8 @@ MAX_VERBINDUNGEN = int(os.environ.get("MAX_VERBINDUNGEN", 64))
 RECHNEN_PARALLEL = int(os.environ.get("RECHNEN_PARALLEL", 2))   # gleichzeitige Rechnungen
 RECHNEN_WARTEN = 30                                              # s, länger wartet keine Anfrage (dann 503)
 LIMITS = {                                                       # (Anzahl, Zeitfenster in s) je IP
-    "ertrag": (int(os.environ.get("LIMIT_ERTRAG_STUNDE", 60)), 3600),
+    "ertrag": (int(os.environ.get("LIMIT_ERTRAG_STUNDE", 120)), 3600),
+    "gesamt": (int(os.environ.get("LIMIT_ERTRAG_GESAMT_STUNDE", 1500)), 3600),   # alle Nutzer zusammen
     "lesen": (int(os.environ.get("LIMIT_LESEN_MINUTE", 600)), 60),
 }
 FELDER = {"kachel", "x", "y", "z", "nx", "ny", "module", "aufstellung"}
@@ -90,7 +91,7 @@ class Begrenzer:
 
     @staticmethod
     def schluessel(ip):
-        """IPv6 je /64 zusammenfassen, IPv4 einzeln."""
+        """IPv6 je /56 zusammenfassen (ein Anschluss hat oft ein ganzes /56), IPv4 einzeln."""
         try:
             a = ipaddress.ip_address(ip)
         except ValueError:
@@ -98,7 +99,7 @@ class Begrenzer:
         if a.version == 6:
             if a.ipv4_mapped:
                 return str(a.ipv4_mapped)
-            return str(ipaddress.ip_network(f"{a}/64", strict=False))
+            return str(ipaddress.ip_network(f"{a}/56", strict=False))
         return str(a)
 
     def erlaubt(self, ip, art):
@@ -126,6 +127,8 @@ class App:
         self.plaetze = threading.BoundedSemaphore(RECHNEN_PARALLEL)
         kacheln = self.rechner.kachel_ids()
         log(f"Kacheln mit Server-Daten: {', '.join(kacheln) or 'keine – zuerst pipeline/kachel.py ausführen'}")
+        for k in kacheln[:3]:
+            self.rechner.kachel(k)
 
     def ertrag(self, d):
         e = pruefe_ertrag(d, set(self.rechner.kachel_ids()))
@@ -165,6 +168,7 @@ def handler_fuer(app, begrenzer, vertraue_proxy):
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
             self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+            self.send_header("Cross-Origin-Resource-Policy", "same-origin")
 
         def json(self, code, obj):
             body = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode()
@@ -172,6 +176,8 @@ def handler_fuer(app, begrenzer, vertraue_proxy):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
+            if self.close_connection:
+                self.send_header("Connection", "close")
             self.sicherheits_header()
             self.end_headers()
             self.wfile.write(body)
@@ -180,11 +186,37 @@ def handler_fuer(app, begrenzer, vertraue_proxy):
             self.json(code, {"ok": False, "fehler": text})
 
         # ------------------------------------------------------------ GET
+        def hat_body(self):
+            return ("Transfer-Encoding" in self.headers
+                    or self.headers.get("Content-Length", "0").strip() not in ("", "0"))
+
         def do_GET(self):
+            if self.hat_body():                # Body bei GET nie lesen -> Verbindung schließen (kein Smuggling)
+                self.close_connection = True
+                return self.fehler(400, "Ungültige Anfrage.")
             self.statisch(urlparse(self.path).path)
 
         def do_HEAD(self):
+            if self.hat_body():
+                self.close_connection = True
+                return self.fehler(400, "Ungültige Anfrage.")
             self.statisch(urlparse(self.path).path, nur_kopf=True)
+
+        def lies_body(self, n, frist_s=5.0):
+            """Genau n Bytes lesen, insgesamt höchstens frist_s Sekunden (gegen tröpfelnde Bodies)."""
+            frist = time.monotonic() + frist_s
+            roh = b""
+            while len(roh) < n:
+                rest = frist - time.monotonic()
+                if rest <= 0:
+                    raise ValueError("zu langsam")
+                self.connection.settimeout(rest)
+                teil = self.rfile.read1(n - len(roh))
+                if not teil:
+                    raise ValueError("abgebrochen")
+                roh += teil
+            self.connection.settimeout(self.timeout)
+            return roh
 
         def statisch(self, pfad, nur_kopf=False):
             if not begrenzer.erlaubt(self.ip(), "lesen"):
@@ -242,6 +274,10 @@ def handler_fuer(app, begrenzer, vertraue_proxy):
 
         # ------------------------------------------------------------ POST
         def do_POST(self):
+            # Eine Rechnung je Verbindung: nie einen ungelesenen Body auf der Verbindung lassen (H1, Smuggling)
+            self.close_connection = True
+            if "Transfer-Encoding" in self.headers:
+                return self.fehler(400, "Ungültige Anfrage.")
             pfad = urlparse(self.path).path
             ctype = self.headers.get("Content-Type", "")
             try:
@@ -252,10 +288,10 @@ def handler_fuer(app, begrenzer, vertraue_proxy):
                 return self.fehler(404, "Unbekannt.")
             if not ctype.startswith("application/json") or not 0 < n <= MAX_BODY:
                 return self.fehler(400, "Ungültige Anfrage.")
-            if not begrenzer.erlaubt(self.ip(), "ertrag"):
+            if not (begrenzer.erlaubt(self.ip(), "ertrag") and begrenzer.erlaubt("*", "gesamt")):
                 return self.fehler(429, "Du hast gerade sehr viele Balkone berechnet. Bitte versuch es später noch einmal.")
             try:
-                daten = json_streng(self.rfile.read(n))
+                daten = json_streng(self.lies_body(n))
                 return self.json(200, app.ertrag(daten))
             except (ValueError, EingabeFehler) as e:
                 return self.fehler(400, str(e) if isinstance(e, EingabeFehler) else "Ungültige Anfrage.")
