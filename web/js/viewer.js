@@ -6,19 +6,27 @@
 //   viewer.beiAuswahl(cb)    cb({kachel, x, y, z, nx, ny, nz})   nur Hauswand/Balkon (EPSG:25833)
 //   viewer.zeigeMarker(x, y, z | null)
 //   viewer.zeigeModule([[[x,y,z] x 4], ...] | null)
-//   viewer.setzeSonne(date)
+//   viewer.setzeSonne(date | null)   Sonnenansicht mit Schatten (null = beenden, Standardlicht)
+//   viewer.spieleSonne({tag, von, bis, dauer_s, beiZeit}) -> {stopp()}   Tagesverlauf, von/bis = Uhrzeit Berlin
+//   viewer.setzeModus('rahmen' | 'drehen'), viewer.beiRahmen(cb), viewer.zeigeRahmen(r | null)
 //   viewer.beiStatus(cb)     cb({ladend, fortschritt 0..1, text})
 //   viewer.entsorge()
 // Zusätzlich (nicht Teil des Vertrags, optional): viewer.beiFehlgriff(cb) cb({art: 'baum'|'dach'|'boden'|
-//   'unscharf'|'leer'}), viewer.qualitaet, viewer.grund, viewer.statistik().
+//   'unscharf'|'leer'}), viewer.modus, viewer.ort, viewer.qualitaet, viewer.grund, viewer.statistik(),
+//   export berlinZeit(tag, stunde) -> Date (Wanduhr Berlin).
+// Rahmen: Ebene = Hauptrichtung der Wand im Umkreis von 3 m um den Startpunkt, waagrecht (Rahmen steht senkrecht);
+//   der fertige Rahmen bleibt sichtbar, bis zeigeRahmen(null) oder ein neuer Rahmen kommt.
 //
 // Die Seite braucht eine Import-Map für three:  {"imports": {"three": "./vendor/three/three.module.min.js"}}
 // Der Container braucht eine feste Höhe (z. B. height: 60vh); der Viewer füllt ihn mit einem <canvas>.
 //
 // Qualität 'auto' (Heuristik, siehe waehleQualitaet): 'niedrig' bei Software-Rendering (SwiftShader,
-// llvmpipe), Datensparmodus/2G/3G, MAX_TEXTURE_SIZE < 4096, deviceMemory <= 4 GB, weniger als 4 Kernen
-// oder Mobilgerät (außer deviceMemory >= 8 und >= 8 Kernen); sonst 'hoch'.
-//   niedrig: Zellen bis 60 m um das Ziel, Textur 20 cm/px bis 22 m, sonst 40 cm/px; keine Schatten,
+// llvmpipe), Datensparmodus/2G, MAX_TEXTURE_SIZE < 4096, deviceMemory <= 4 GB (nur wenn der Browser es
+// meldet – Safari/Firefox melden nichts, das zählt NICHT als wenig Speicher), weniger als 4 Kernen (nur wenn
+// gemeldet) oder Handy/Tablet (iPad meldet sich als „Macintosh“ mit Touchpunkten; außer deviceMemory >= 8 und
+// >= 8 Kerne); sonst 'hoch'. Ein Mac-Desktop (Safari, Firefox, Chrome; Apple-GPU) bekommt also 'hoch'.
+//   niedrig: Zellen bis 60 m um das Ziel, Textur 20 cm/px bis 22 m, sonst 40 cm/px; Schatten nur in der
+//            Sonnenansicht (1024², ±45 m um Balkon/Adresse, nur Nahzellen werfen),
 //            Pixelverhältnis max. 1,5 (beim Bewegen 60 % davon), kein Antialiasing, keine Dämpfung,
 //            bilineare Filterung ohne Anisotropie.
 //   hoch:    Zellen bis 110 m, Textur 10 cm/px bis 20 m, 20 cm/px bis 60 m, sonst 40 cm/px;
@@ -55,7 +63,7 @@ export function waehleQualitaet(gl) {
   const mobil = /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(ua) ||
     (nav.maxTouchPoints > 1 && /Macintosh/.test(ua));
   const mem = nav.deviceMemory;            // nur Chromium, gerundet, max. 8
-  const kerne = nav.hardwareConcurrency || 4;
+  const kerne = nav.hardwareConcurrency;    // fehlt in manchen Browsern -> zählt nicht
   const con = nav.connection || {};
   let renderer = '';
   try {
@@ -66,10 +74,11 @@ export function waehleQualitaet(gl) {
   const gruende = [];
   if (/SwiftShader|llvmpipe|softpipe|Software|Basic Render|Microsoft Basic/i.test(renderer)) gruende.push('Software-Rendering');
   if (con.saveData) gruende.push('Datensparmodus');
-  if (/(^|-)2g|3g/.test(con.effectiveType || '')) gruende.push('langsame Verbindung');
+  // nur 2G zählt: Chrome meldet '3g' schon bei mäßigem WLAN, das sagt nichts über die Grafik
+  if (/2g/.test(con.effectiveType || '')) gruende.push('sehr langsame Verbindung');
   if (maxTex < 4096) gruende.push('kleine Texturgrenze');
   if (mem && mem <= 4) gruende.push(`${mem} GB Speicher`);
-  if (kerne < 4) gruende.push(`${kerne} Kerne`);
+  if (kerne && kerne < 4) gruende.push(`${kerne} Kerne`);
   if (mobil && !(mem >= 8 && kerne >= 8)) gruende.push('Mobilgerät');
   return { stufe: gruende.length ? 'niedrig' : 'hoch', grund: gruende.join(', ') || 'leistungsfähiges Gerät', maxTex, renderer };
 }
@@ -91,6 +100,23 @@ export function sonnenstand(date, breite = BREITE, laenge = LAENGE) {
   const el = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H));
   const az = Math.atan2(-Math.sin(H), Math.tan(dec) * Math.cos(phi) - Math.sin(phi) * Math.cos(H));
   return { azimut: ((az / rad) % 360 + 360) % 360, hoehe: el / rad };
+}
+
+// Uhrzeit h (Dezimalstunden, Wanduhr Europe/Berlin) am Kalendertag von tag (lokales Datum) -> Date
+let berlinFormat = null;
+try {
+  berlinFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit',
+    day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+} catch (e) { /* ohne Zeitzonendaten: MEZ */ }
+export function berlinZeit(tag, h) {
+  const soll = Date.UTC(tag.getFullYear(), tag.getMonth(), tag.getDate()) + h * 3600000;
+  let t = soll - 3600000;                           // erste Schätzung MEZ
+  if (berlinFormat) {
+    const p = Object.fromEntries(berlinFormat.formatToParts(new Date(t)).map(x => [x.type, x.value]));
+    const wand = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+    t += soll - wand - (((t % 1000) + 1000) % 1000);  // Sommerzeit ausgleichen
+  }
+  return new Date(t);
 }
 
 // ------------------------------------------------------------------------------------------------ Hilfen
@@ -176,14 +202,14 @@ export async function erstelleViewer(container, optionen = {}) {
   let prAktuell = prVoll;
   renderer.setPixelRatio(prVoll);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  if (Q.schatten) {
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
-    renderer.shadowMap.autoUpdate = false;      // nur neu, wenn Sonne/Geometrie sich ändert
-  }
+  // Schattenkarte immer bereit; sie wird nur gezeichnet, wenn die Sonne Schatten wirft ('hoch' immer,
+  // 'niedrig' nur während der Sonnenansicht) und nur neu, wenn Sonne/Geometrie sich ändern
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = Q.schatten ? THREE.PCFShadowMap : THREE.BasicShadowMap;   // 'niedrig': 1 Abtastung
+  renderer.shadowMap.autoUpdate = false;
   const canvas = renderer.domElement;
   canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;outline:none;';
-  canvas.setAttribute('aria-label', '3D-Ansicht der Häuser. Ziehen zum Drehen, zwei Finger oder Mausrad zum Zoomen, auf eine Hauswand tippen zum Auswählen.');
+  canvas.setAttribute('aria-label', '3D-Ansicht der Häuser. Auf der Hauswand einen Rahmen über den Balkon ziehen oder tippen; zwei Finger, rechte Maustaste oder Mausrad bewegen die Ansicht.');
   canvas.setAttribute('role', 'img');
   canvas.tabIndex = 0;
   if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
@@ -208,11 +234,12 @@ export async function erstelleViewer(container, optionen = {}) {
   scene.add(hemi);
   const sonne = new THREE.DirectionalLight(0xfff4e0, 1.2);
   scene.add(sonne, sonne.target);
-  if (Q.schatten) {
-    sonne.castShadow = true;
-    sonne.shadow.mapSize.set(Q.schatten, Q.schatten);
+  sonne.castShadow = !!Q.schatten;
+  const SCHATTEN_R = Q.schatten ? 140 : 45;       // m, halbe Kantenlänge der Schattenkamera um das Zentrum
+  sonne.shadow.mapSize.set(Q.schatten || 1024, Q.schatten || 1024);
+  {
     const sc = sonne.shadow.camera;
-    sc.left = sc.bottom = -140; sc.right = sc.top = 140; sc.near = 1; sc.far = 1200;
+    sc.left = sc.bottom = -SCHATTEN_R; sc.right = sc.top = SCHATTEN_R; sc.near = 50; sc.far = 700;
     sonne.shadow.bias = -0.0004;
     sonne.shadow.normalBias = 0.08;
   }
@@ -237,9 +264,11 @@ export async function erstelleViewer(container, optionen = {}) {
     rafId = 0;
     let weiter = false;
     if (flug) weiter = flugSchritt(t) || weiter;
+    if (sonnenAnim) weiter = sonnenSchritt(t) || weiter;
     weiter = controls.update() || weiter;
     // geringere Auflösung, solange sich die Kamera bewegt; danach ein scharfes Bild
-    const pr = weiter || interaktion ? prBewegt : prVoll;
+    // Sonnenverlauf: Schattenkarte jedes Bild neu -> noch etwas gröber (50 %) für flüssigen Ablauf
+    const pr = sonnenAnim ? Math.max(0.5, prVoll * 0.5) : weiter || interaktion ? prBewegt : prVoll;
     if (pr !== prAktuell) {
       prAktuell = pr;
       renderer.setPixelRatio(pr);
@@ -295,7 +324,7 @@ export async function erstelleViewer(container, optionen = {}) {
     return k.metaLaden;
   }
 
-  const fernMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const fernMat = new THREE.MeshLambertMaterial({ vertexColors: true, shadowSide: THREE.DoubleSide });
   const umgMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });   // LoD2-Flächen ohne Kappen
   const bodenMat = new THREE.MeshLambertMaterial({ color: 0xc9cfc0 });
 
@@ -343,7 +372,7 @@ export async function erstelleViewer(container, optionen = {}) {
         b.mesh = m;
         k.gruppe.add(m);
       }
-      k.fern = { bloecke, voll: idx, versteckt: new Set() };
+      k.fern = { bloecke, voll: idx, versteckt: new Set(), aPos, werfer: null };
       fernIndex(k, true);
       zeichne();
     }).catch(e => { if (!entsorgt) console.warn('Fernansicht', e); });
@@ -571,11 +600,13 @@ export async function erstelleViewer(container, optionen = {}) {
     if (entsorgt || c.entladen) { tex.dispose(); return; }
     if (!c.mesh) {
       const g = baueZellGeometrie(buf, z);
-      const mat = new THREE.MeshLambertMaterial({ map: tex });
+      // shadowSide beidseitig: Foto-Mesh ist eine offene Fläche; sonst würfen der Sonne zugewandte Flächen keinen Schatten
+      const mat = new THREE.MeshLambertMaterial({ map: tex, shadowSide: THREE.DoubleSide });
       const m = new THREE.Mesh(g, mat);
       m.name = `zelle ${k.id}/${z.id}`;
       m.matrixAutoUpdate = false;
-      m.castShadow = m.receiveShadow = !!Q.schatten;
+      m.receiveShadow = true;
+      m.castShadow = schattenWerfer(c);
       m.userData = { kachel: k.id, zelle: z, wandDreiecke: z.nt - z.nb };
       c.mesh = m;
       k.gruppe.add(m);
@@ -685,6 +716,7 @@ export async function erstelleViewer(container, optionen = {}) {
       }
     }
     pumpe();
+    if (sonnenDatum) setzeWerfer();
     return umgNah;     // Umgebungszellen in der Nähe (für die Kamerawahl)
   }
 
@@ -741,11 +773,11 @@ export async function erstelleViewer(container, optionen = {}) {
   }
 
   // geglättete Flächennormale (Szene) um den Trefferpunkt: Dreiecke derselben Zelle im Umkreis von 1 m
-  function glatteNormale(treffer) {
+  function glatteNormale(treffer, r = 1.0, ref = null, minDot = 0.5) {
     const g = treffer.object.geometry;
     const pos = g.attributes.position.array, idx = g.index.array;
-    const n0 = treffer.face.normal.clone();
-    const p = treffer.point, r2 = 1.0;
+    const n0 = (ref || treffer.face.normal).clone();
+    const p = treffer.point, r2 = r * r;
     const s = new THREE.Vector3();
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
     const nw = treffer.object.userData.wandDreiecke;
@@ -759,10 +791,49 @@ export async function erstelleViewer(container, optionen = {}) {
       n.crossVectors(b.sub(a), c.sub(a));          // Länge = 2 x Fläche
       const L = n.length();
       if (L < 1e-9) continue;
-      if (n.dot(n0) / L < 0.5) continue;
+      if (n.dot(n0) / L < minDot) continue;
       s.add(n);
     }
     return s.lengthSq() > 0 ? s.normalize() : n0;
+  }
+
+  // Hauptrichtung der Wand (waagrechte Normale, Szene) um den Treffer: Flächen-Histogramm der Normalen-Azimute
+  // im Umkreis r (5°-Klassen), Spitze ±15° gemittelt. Robust gegen Balkonseiten und Brüstungskanten.
+  function wandRichtung(treffer, ref, r = 3.0) {
+    const g = treffer.object.geometry;
+    const pos = g.attributes.position.array, idx = g.index.array;
+    const p = treffer.point, r2 = r * r, nw = treffer.object.userData.wandDreiecke;
+    const hist = new Float64Array(72), dirs = [];
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
+    for (let t = 0; t < nw; t++) {
+      const i0 = idx[3 * t] * 3, i1 = idx[3 * t + 1] * 3, i2 = idx[3 * t + 2] * 3;
+      const cx = (pos[i0] + pos[i1] + pos[i2]) / 3 - p.x, cy = (pos[i0 + 1] + pos[i1 + 1] + pos[i2 + 1]) / 3 - p.y;
+      const cz = (pos[i0 + 2] + pos[i1 + 2] + pos[i2 + 2]) / 3 - p.z;
+      if (cx * cx + cy * cy + cz * cz > r2) continue;
+      a.fromArray(pos, i0); b.fromArray(pos, i1); c.fromArray(pos, i2);
+      n.crossVectors(b.sub(a), c.sub(a));
+      const L = n.length();
+      if (L < 1e-9) continue;
+      const hz = Math.hypot(n.x, n.z) / L;
+      if (hz < 0.85 || (n.x * ref.x + n.z * ref.z) / L <= 0) continue;   // nur steile Flächen zur Kameraseite
+      const w = L * hz, ang = Math.atan2(n.x, n.z);
+      hist[Math.floor(((ang / Math.PI + 1) * 36)) % 72] += w;
+      dirs.push(ang, w);
+    }
+    let best = -1, bw = 0;
+    for (let i = 0; i < 72; i++) {
+      const w = hist[(i + 71) % 72] * 0.5 + hist[i] + hist[(i + 1) % 72] * 0.5;
+      if (w > bw) { bw = w; best = i; }
+    }
+    if (best < 0) return new THREE.Vector3(ref.x, 0, ref.z).normalize();
+    const mitte = ((best + 0.5) / 36 - 1) * Math.PI;
+    let sx = 0, sz = 0;
+    for (let i = 0; i < dirs.length; i += 2) {
+      let d = dirs[i] - mitte;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      if (Math.abs(d) < 0.26) { sx += Math.sin(dirs[i]) * dirs[i + 1]; sz += Math.cos(dirs[i]) * dirs[i + 1]; }
+    }
+    return new THREE.Vector3(sx, 0, sz).normalize();
   }
 
   function klassifiziere(treffer, richtung) {
@@ -779,6 +850,7 @@ export async function erstelleViewer(container, optionen = {}) {
     }
     return {
       art: 'wand',
+      punkt: treffer.point.clone(), normale: n.clone(), treffer,     // Szene
       daten: {
         kachel: ud.kachel,
         x: +w.x.toFixed(3), y: +w.y.toFixed(3), z: +w.z.toFixed(3),
@@ -787,43 +859,192 @@ export async function erstelleViewer(container, optionen = {}) {
     };
   }
 
-  // ---------------------------------------------------------------------------------------- Tippen
+  // ---------------------------------------------------------------------------------------- Tippen, Rahmen, Modus
+  // 'drehen': ein Finger/linke Maustaste dreht (OrbitControls), kurzes Tippen = Auswahl.
+  // 'rahmen': ein Finger/linke Maustaste zieht auf einer Hauswand einen Rahmen auf; zwei Finger zoomen/drehen/
+  //           verschieben, rechte Maustaste dreht, Mausrad zoomt. Kurzes Tippen oder Rahmen < 0,4 m = Auswahl.
+  let modus = 'drehen';
+  const rahmenCbs = [];
+  let letzteWahl = null;          // Szenenpunkt der letzten Auswahl / des letzten Rahmens (Zentrum der Schatten)
+  function wendeModusAn() {
+    if (modus === 'rahmen') {
+      controls.mouseButtons = { LEFT: -1, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+      controls.touches = { ONE: -1, TWO: THREE.TOUCH.DOLLY_PAN };
+      canvas.style.cursor = 'crosshair';
+    } else {
+      controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+      controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+      canvas.style.cursor = '';
+    }
+  }
+  wendeModusAn();
+
   const zeiger = new Map();
-  let mehrfinger = false;
+  let mehrfinger = false, ziehen = null;
+  function strahlAus(cx, cy) {
+    const r = canvas.getBoundingClientRect();
+    strahl.setFromCamera(new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1), camera);
+    strahl.far = Infinity;
+    return { o: strahl.ray.origin.clone(), d: strahl.ray.direction.clone() };
+  }
+  function treffe(cx, cy) {
+    const { o, d } = strahlAus(cx, cy);
+    const t0 = performance.now();
+    const h = schneide(o, d, 2000, true);    // Fern-/Umgebungstreffer davor (ungeladene Zelle) -> 'unscharf'
+    const erg = klassifiziere(h, d);
+    statistik.letzterPick = performance.now() - t0;
+    return erg;
+  }
+  function meldeTreffer(erg) {
+    if (erg.art === 'wand') {
+      neueWahl(erg.punkt);
+      for (const cb of auswahlCbs) try { cb({ ...erg.daten }); } catch (e) { console.error(e); }
+    } else {
+      for (const cb of fehlgriffCbs) try { cb({ art: erg.art }); } catch (e) { console.error(e); }
+    }
+  }
+  function tippen(cx, cy) { meldeTreffer(treffe(cx, cy)); }
+  function neueWahl(p) {
+    letzteWahl = p.clone();
+    if (sonnenDatum) { sonnenZentrum = p.clone(); setzeWerfer(); schattenZentrum(); }   // Schatten um den Balkon
+  }
+
+  // Rahmen in der Wandebene: Achsen u (waagrecht entlang der Wand) und v (in der Ebene nach oben)
+  function wandAchsen(n) {
+    const u = new THREE.Vector3(0, 1, 0).cross(n);
+    if (u.lengthSq() < 1e-6) u.set(1, 0, 0);
+    u.normalize();
+    const v = new THREE.Vector3().crossVectors(n, u).normalize();
+    if (v.y < 0) v.negate();
+    return { u, v };
+  }
+  function rahmenMasse(aS, bS, n) {
+    const { u, v } = wandAchsen(n);
+    const d = bS.clone().sub(aS);
+    const du = d.dot(u), dv = d.dot(v);
+    const u0 = Math.min(0, du), u1 = Math.max(0, du), v0 = Math.min(0, dv), v1 = Math.max(0, dv);
+    return { u, v, u0, u1, v0, v1, breite: u1 - u0, hoehe: v1 - v0 };
+  }
+  const rahmenFuellMat = new THREE.MeshBasicMaterial({ color: 0x2e6bf0, transparent: true, opacity: 0.35, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+  const rahmenHellMat = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+  const rahmenBlauMat = new THREE.MeshBasicMaterial({ color: 0x2e6bf0, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+  let rahmenObj = null, festerRahmen = null;      // festerRahmen: zuletzt fertig aufgezogener/gezeigter Rahmen
+  function rahmenZurueck() {                      // Ziehen abgebrochen: vorherigen Rahmen wieder zeigen
+    festerRahmen ? zeichneRahmen(festerRahmen.aS, festerRahmen.bS, festerRahmen.n) : zeichneRahmen(null);
+  }
+  function zeichneRahmen(aS, bS, n) {
+    if (rahmenObj) { entsorgeObjekt(rahmenObj); rahmenObj = null; }
+    if (!aS) { zeichne(); return; }
+    const m = rahmenMasse(aS, bS, n);
+    const basis = aS.clone().addScaledVector(n, 0.05);
+    const P = (uu, vv) => basis.clone().addScaledVector(m.u, uu).addScaledVector(m.v, vv);
+    const quads = [], quad = (u0, v0, u1, v1, liste) => {
+      const a = P(u0, v0), b = P(u1, v0), c = P(u1, v1), d = P(u0, v1);
+      for (const q of [a, b, c, a, c, d]) liste.push(q.x, q.y, q.z);
+    };
+    // Randbreite ~ 3 px auf dem Bildschirm: weißer Außenrand + blauer Innenrand, sichtbar auf heller und dunkler Wand
+    const pxM = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.distanceTo(aS) / Math.max(1, canvas.clientHeight);
+    const w = Math.max(0.03, 3 * pxM);
+    const ring = (u0, v0, u1, v1, b) => {
+      const l = [];
+      quad(u0 - b, v0 - b, u1 + b, v0, l); quad(u0 - b, v1, u1 + b, v1 + b, l);
+      quad(u0 - b, v0, u0, v1, l); quad(u1, v0, u1 + b, v1, l);
+      return l;
+    };
+    const geo = arr => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); return g; };
+    rahmenObj = new THREE.Group();
+    const fuell = []; quad(m.u0, m.v0, m.u1, m.v1, fuell);
+    const teile = [[geo(fuell), rahmenFuellMat, 30], [geo(ring(m.u0, m.v0, m.u1, m.v1, w)), rahmenBlauMat, 31],
+                   [geo(ring(m.u0 - w, m.v0 - w, m.u1 + w, m.v1 + w, w)), rahmenHellMat, 31]];
+    for (const [g, mat, ro] of teile) { const o = new THREE.Mesh(g, mat); o.renderOrder = ro; rahmenObj.add(o); }
+    extras.add(rahmenObj);
+    zeichne();
+  }
+  function rahmenDaten(z) {
+    const { aS, bS, n } = z;
+    const m = rahmenMasse(aS, bS, n);
+    const unten = aS.clone().addScaledVector(m.u, (m.u0 + m.u1) / 2).addScaledVector(m.v, m.v0);
+    const w = nachWelt(unten), A = nachWelt(aS), Bw = nachWelt(bS);
+    const r3 = v => +v.toFixed(3);
+    return {
+      kachel: z.kachel, x: r3(w.x), y: r3(w.y), z: r3(w.z),
+      nx: +n.x.toFixed(4), ny: +(-n.z).toFixed(4), nz: +n.y.toFixed(4),
+      breite_m: +m.breite.toFixed(2), hoehe_m: +m.hoehe.toFixed(2),
+      a: [r3(A.x), r3(A.y), r3(A.z)], b: [r3(Bw.x), r3(Bw.y), r3(Bw.z)],
+    };
+  }
+
   function unten(e) {
     zeiger.set(e.pointerId, { x: e.clientX, y: e.clientY, t: e.timeStamp });
-    if (zeiger.size > 1) mehrfinger = true;
+    if (zeiger.size > 1) {
+      mehrfinger = true;
+      if (ziehen) { ziehen = null; rahmenZurueck(); }       // zweiter Finger: Ansicht bewegen statt Rahmen
+      return;
+    }
+    const maus = e.pointerType === 'mouse';
+    if (modus === 'rahmen' && (!maus || e.button === 0) && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      const erg = treffe(e.clientX, e.clientY);
+      ziehen = { id: e.pointerId, x: e.clientX, y: e.clientY, erg, bS: null };
+      if (erg.art === 'wand') {
+        // Rahmenebene: Hauptrichtung der Wand im Umkreis von 3 m, waagrecht gestellt (Rahmen steht senkrecht
+        // wie ein Geländer); Normale = diese Richtung
+        ziehen.aS = erg.punkt;
+        ziehen.n = wandRichtung(erg.treffer, erg.normale);
+        ziehen.kachel = erg.daten.kachel;
+        try { canvas.setPointerCapture(e.pointerId); } catch (x) { /* egal */ }
+      }
+    }
+  }
+  const ebene = new THREE.Plane(), ebenenPunkt = new THREE.Vector3();
+  function bewege(e) {
+    if (!ziehen || e.pointerId !== ziehen.id || !ziehen.aS || mehrfinger) return;
+    const tol = e.pointerType === 'mouse' ? 4 : 10;
+    if (!ziehen.bS && Math.hypot(e.clientX - ziehen.x, e.clientY - ziehen.y) < tol) return;
+    strahlAus(e.clientX, e.clientY);
+    ebene.setFromNormalAndCoplanarPoint(ziehen.n, ziehen.aS);
+    if (!strahl.ray.intersectPlane(ebene, ebenenPunkt)) return;
+    if (ebenenPunkt.distanceTo(ziehen.aS) > 40) return;          // fast parallel zur Wand: ignorieren
+    ziehen.bS = ebenenPunkt.clone();
+    zeichneRahmen(ziehen.aS, ziehen.bS, ziehen.n);
   }
   function oben(e) {
     const s = zeiger.get(e.pointerId);
     zeiger.delete(e.pointerId);
     const war = mehrfinger;
     if (zeiger.size === 0) mehrfinger = false;
+    if (ziehen && e.pointerId === ziehen.id) {
+      const z = ziehen;
+      ziehen = null;
+      if (war) return;
+      if (z.aS && z.bS) {
+        const m = rahmenMasse(z.aS, z.bS, z.n);
+        if (Math.max(m.breite, m.hoehe) >= 0.4) {
+          neueWahl(z.aS.clone().addScaledVector(m.u, (m.u0 + m.u1) / 2).addScaledVector(m.v, (m.v0 + m.v1) / 2));
+          festerRahmen = { aS: z.aS, bS: z.bS, n: z.n };
+          const d = rahmenDaten(z);
+          for (const cb of rahmenCbs) try { cb(d); } catch (x) { console.error(x); }
+          return;                                                  // Rahmen bleibt sichtbar (zeigeRahmen(null) entfernt ihn)
+        }
+        rahmenZurueck();
+      }
+      // kleiner Rahmen oder kein Ziehen: wie Tippen (Startpunkt), aber nicht nach langem Wischen ohne Wand
+      if (z.aS || Math.hypot(e.clientX - z.x, e.clientY - z.y) <= (e.pointerType === 'mouse' ? 5 : 12)) meldeTreffer(z.erg);
+      return;
+    }
     if (!s || war || e.button > 0) return;
     const tol = e.pointerType === 'mouse' ? 5 : 12;
     if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > tol || e.timeStamp - s.t > 700) return;
     tippen(e.clientX, e.clientY);
   }
-  function weg(e) { zeiger.delete(e.pointerId); if (zeiger.size === 0) mehrfinger = false; }
+  function weg(e) {
+    zeiger.delete(e.pointerId);
+    if (zeiger.size === 0) mehrfinger = false;
+    if (ziehen && ziehen.id === e.pointerId) { ziehen = null; rahmenZurueck(); }
+  }
   canvas.addEventListener('pointerdown', unten);
+  canvas.addEventListener('pointermove', bewege);
   canvas.addEventListener('pointerup', oben);
   canvas.addEventListener('pointercancel', weg);
-
-  function tippen(cx, cy) {
-    const r = canvas.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
-    strahl.setFromCamera(ndc, camera);
-    const o = strahl.ray.origin.clone(), d = strahl.ray.direction.clone();
-    const t0 = performance.now();
-    const h = schneide(o, d, 2000, true);    // Fern-/Umgebungstreffer davor (ungeladene Zelle) -> 'unscharf'
-    const erg = klassifiziere(h, d);
-    statistik.letzterPick = performance.now() - t0;
-    if (erg.art === 'wand') {
-      for (const cb of auswahlCbs) try { cb({ ...erg.daten }); } catch (e) { console.error(e); }
-    } else {
-      for (const cb of fehlgriffCbs) try { cb({ art: erg.art }); } catch (e) { console.error(e); }
-    }
-  }
 
   // ---------------------------------------------------------------------------------------- Kamera
   function fliege(pos, ziel, dauer = 1100) {
@@ -924,29 +1145,105 @@ export async function erstelleViewer(container, optionen = {}) {
   }
 
   // ---------------------------------------------------------------------------------------- Sonne / Schatten
-  let sonnenDatum = new Date();
+  // Ohne Sonnenansicht: festes, freundliches Licht (Südsüdwest, 40° hoch) – unabhängig von der Uhrzeit, damit das
+  // Modell abends nicht dunkel ist. Mit Sonnenansicht (setzeSonne(date) / spieleSonne): echter Sonnenstand Berlin.
+  let sonnenDatum = null, sonnenAnim = null, sonnenZentrum = null;
   let ersterOrt = true, ortNr = 0;
+  const STANDARD_SONNE = { azimut: 200, hoehe: 40 };
+  // Schattenwerfer auf 'niedrig' (nur während der Sonnenansicht): Detailzellen bis 12 m um das Schattenzentrum
+  // (eigenes Haus, Balkone über den Modulen), weiter bis 45 m die vereinfachte Fernansicht – die zeichnet nur
+  // die Schattenkarte (unsichtbares Material: schreibt im Bild weder Farbe noch Tiefe). So bleibt die
+  // Schattenkarte auf schwachen Geräten günstig.
+  const WERFER_DETAIL = 12;
+  const werferMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide, shadowSide: THREE.DoubleSide });
+  function zentrumAbstand(k, z) {
+    if (!sonnenZentrum) return Infinity;
+    const w = nachWelt(sonnenZentrum);
+    return abstandRechteck(w.x, w.y, ...zellRechteck(k, z));
+  }
+  function schattenWerfer(c) {
+    if (Q.schatten) return true;
+    return !!sonnenDatum && zentrumAbstand(c.k, c.z) <= WERFER_DETAIL;
+  }
+  function setzeWerfer() {
+    sonne.castShadow = !!Q.schatten || !!sonnenDatum;
+    for (const c of zellen.values()) if (c.mesh) c.mesh.castShadow = schattenWerfer(c);
+    if (Q.schatten) return;
+    for (const k of kacheln) {
+      const f = k.fern;
+      if (!f) continue;
+      if (f.werfer) { f.werfer.geometry.dispose(); f.werfer.parent?.remove(f.werfer); f.werfer = null; }
+      if (!sonnenDatum) continue;
+      const teile = [];
+      let n = 0;
+      for (const z of k.meta.zellen) {
+        const d = zentrumAbstand(k, z), ber = k.meta.fern.zellen[z.id];
+        if (!ber || d > SCHATTEN_R) continue;
+        const c = zellen.get(`${k.id}/${z.id}`);
+        if (c?.mesh?.castShadow) continue;                 // Detail wirft schon
+        teile.push(ber);
+        n += ber[1];
+      }
+      if (!n) continue;
+      const idx = new f.voll.constructor(n * 3);
+      let o = 0;
+      for (const [s0, cnt] of teile) { idx.set(f.voll.subarray(s0 * 3, (s0 + cnt) * 3), o); o += cnt * 3; }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', f.aPos);
+      g.setIndex(new THREE.BufferAttribute(idx, 1));
+      g.computeBoundingSphere();
+      const m = new THREE.Mesh(g, werferMat);
+      m.name = 'schattenwerfer';
+      m.castShadow = true;
+      // im Bild gar nicht zeichnen (nur die Schattenkarte ruft onBeforeRender nicht auf)
+      m.onBeforeRender = () => g.setDrawRange(0, 0);
+      m.onAfterRender = () => g.setDrawRange(0, Infinity);
+      m.matrixAutoUpdate = false;
+      m.frustumCulled = false;
+      f.werfer = m;
+      k.gruppe.add(m);
+    }
+  }
   function schattenZentrum() {
-    const ziel = controls.target;
+    const ziel = sonnenDatum && sonnenZentrum ? sonnenZentrum : controls.target;
     const k = kacheln.find(k => k.meta) || kacheln[0];
-    const st = sonnenstand(sonnenDatum);
-    const gn = k.meta?.nord_gitter_az || 0;
+    const st = sonnenDatum ? sonnenstand(sonnenDatum) : STANDARD_SONNE;
+    const gn = sonnenDatum ? k.meta?.nord_gitter_az || 0 : 0;
     const az = THREE.MathUtils.degToRad(st.azimut + gn), el = THREE.MathUtils.degToRad(Math.max(st.hoehe, 2));
     const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
-    sonne.position.copy(ziel).addScaledVector(dir, 500);
+    sonne.position.copy(ziel).addScaledVector(dir, 300);
     sonne.target.position.copy(ziel);
     sonne.target.updateMatrixWorld();
     sonne.updateMatrixWorld();
     const tag = st.hoehe > 0;
     // Fototexturen enthalten schon Licht: Summe so, dass besonnte Dächer etwa ihre Fotohelligkeit behalten,
-    // Schatten aber sichtbar werden (Verhältnis Himmel : Sonne ~ 1 : 1,4)
-    sonne.intensity = tag ? 0.5 + 1.7 * Math.min(1, Math.sin(el) * 2.2) : 0;
-    hemi.intensity = tag ? 1.6 : 1.2;
+    // Schatten aber sichtbar werden (Verhältnis Himmel : Sonne ~ 1 : 1,4); nachts nur Himmelslicht
+    // In der Sonnenansicht mehr Kontrast (Himmel : Sonne ~ 1 : 2), damit Schlagschatten deutlich sind
+    const kontrast = sonnenDatum ? [1.25, 0.6, 1.9] : [1.6, 0.5, 1.7];
+    sonne.intensity = tag ? kontrast[1] + kontrast[2] * Math.min(1, Math.sin(el) * 2.2) : 0;
+    hemi.intensity = tag ? kontrast[0] : 1.0;
     schattenNeu();
     zeichne();
+    return st;
   }
   function schattenNeu() {
-    if (Q.schatten) renderer.shadowMap.needsUpdate = true;
+    if (sonne.castShadow) renderer.shadowMap.needsUpdate = true;
+  }
+  function sonnenSchritt(t) {
+    const a = sonnenAnim;
+    if (a.t0 === null) a.t0 = t;
+    const f = Math.min(1, (t - a.t0) / a.dauer);
+    sonnenDatum = berlinZeit(a.tag, a.von + (a.bis - a.von) * f);
+    schattenZentrum();
+    if (a.beiZeit) try { a.beiZeit(new Date(sonnenDatum)); } catch (e) { console.error(e); }
+    if (f >= 1) { sonnenAnim = null; return false; }
+    return true;
+  }
+  function starteSonnenansicht() {
+    if (!sonnenDatum) {
+      // Zentrum: zuletzt gewählter Punkt/Rahmen, sonst das Ziel der Kamera
+      sonnenZentrum = (letzteWahl || controls.target).clone();
+    }
   }
 
   // ---------------------------------------------------------------------------------------- Marker, Module
@@ -969,6 +1266,7 @@ export async function erstelleViewer(container, optionen = {}) {
     async zeigeOrt(x, y) {
       if (entsorgt) return false;
       const nr = ++ortNr;                 // ein späterer Aufruf gewinnt
+      letzteWahl = null;
       const veraltet = () => entsorgt || nr !== ortNr;
       const k = kacheln.find(k => abstandRechteck(x, y, ...k.bounds) < 30);
       if (!k) {
@@ -998,6 +1296,8 @@ export async function erstelleViewer(container, optionen = {}) {
       fliege(a.pos, a.fokus, 1200);
       schattenZentrum();
       viewer.ort = { x, y, haus: a.art };
+      if (sonnenDatum) { sonnenZentrum = a.fokus.clone(); setzeWerfer(); schattenZentrum(); }
+      viewer.setzeModus('rahmen');
       if (a.art === 'umgebung') {
         setzeStatus({ text: 'Dieses Haus liegt am Rand des 3D-Modells und ist nur als grauer Block zu sehen.' });
       }
@@ -1005,6 +1305,27 @@ export async function erstelleViewer(container, optionen = {}) {
     },
 
     beiAuswahl(cb) { if (typeof cb === 'function') auswahlCbs.push(cb); },
+    beiRahmen(cb) { if (typeof cb === 'function') rahmenCbs.push(cb); },
+
+    setzeModus(m) {
+      if (m !== 'rahmen' && m !== 'drehen') return modus;
+      modus = m;
+      if (ziehen) { ziehen = null; rahmenZurueck(); }
+      wendeModusAn();
+      return modus;
+    },
+    get modus() { return modus; },
+
+    // r: {a:[x,y,z], b:[x,y,z], nx, ny[, nz]} in EPSG:25833 (z. B. das Objekt aus beiRahmen) oder null
+    zeigeRahmen(r) {
+      festerRahmen = null;
+      if (!r || !Array.isArray(r.a) || !Array.isArray(r.b)) { zeichneRahmen(null); return; }
+      const n = new THREE.Vector3(+r.nx || 0, +r.nz || 0, -(+r.ny || 0));
+      if (n.lengthSq() < 1e-9) { zeichneRahmen(null); return; }
+      festerRahmen = { aS: nachSzene(...r.a), bS: nachSzene(...r.b), n: n.normalize() };
+      zeichneRahmen(festerRahmen.aS, festerRahmen.bS, festerRahmen.n);
+    },
+
     beiFehlgriff(cb) { if (typeof cb === 'function') fehlgriffCbs.push(cb); },
     beiStatus(cb) { if (typeof cb === 'function') { statusCbs.push(cb); cb({ ...status }); } },
 
@@ -1039,7 +1360,8 @@ export async function erstelleViewer(container, optionen = {}) {
         g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
         g.computeVertexNormals();
         const m = new THREE.Mesh(g, modulMat);
-        m.castShadow = !!Q.schatten;
+        m.castShadow = true;
+        m.receiveShadow = true;           // Schatten von Nachbarhäusern/Balkonen auf den Modulen
         const lg = new THREE.BufferGeometry();
         lg.setAttribute('position', new THREE.Float32BufferAttribute(kanten, 3));
         module.add(m, new THREE.LineSegments(lg, rahmenMat));
@@ -1049,12 +1371,35 @@ export async function erstelleViewer(container, optionen = {}) {
       zeichne();
     },
 
+    // date: Sonnenansicht für diesen Zeitpunkt (mit Schatten, auch auf 'niedrig'); null: beenden
     setzeSonne(date) {
-      sonnenDatum = date instanceof Date && !isNaN(date) ? date : new Date();
-      schattenZentrum();
-      const s = sonnenstand(sonnenDatum);
+      sonnenAnim = null;
+      if (!(date instanceof Date) || isNaN(date)) {
+        sonnenDatum = null;
+        sonnenZentrum = null;
+        setzeWerfer();
+        schattenZentrum();
+        return null;
+      }
+      starteSonnenansicht();
+      sonnenDatum = date;
+      setzeWerfer();
+      const s = schattenZentrum();
       return { azimut: s.azimut, hoehe: s.hoehe };
     },
+
+    // Tagesverlauf abspielen: Uhrzeit von..bis (Stunden, Berlin) am Tag `tag` in dauer_s Sekunden
+    spieleSonne({ tag = new Date(), von = 6, bis = 21, dauer_s = 8, beiZeit = null } = {}) {
+      starteSonnenansicht();
+      sonnenDatum = berlinZeit(tag, von);
+      setzeWerfer();
+      schattenZentrum();
+      const anim = { tag, von: +von, bis: +bis, dauer: Math.max(0.5, +dauer_s) * 1000, beiZeit, t0: null };
+      sonnenAnim = anim;
+      zeichne();
+      return { stopp() { if (sonnenAnim === anim) { sonnenAnim = null; zeichne(); } } };
+    },
+
 
     statistik() {
       let tex = 0, dreiecke = 0, nz = 0, geo = 0;
@@ -1088,15 +1433,17 @@ export async function erstelleViewer(container, optionen = {}) {
       ro ? ro.disconnect() : window.removeEventListener('resize', groesse);
       canvas.removeEventListener('pointerdown', unten);
       canvas.removeEventListener('pointerup', oben);
+      canvas.removeEventListener('pointermove', bewege);
+      sonnenAnim = null;
       canvas.removeEventListener('pointercancel', weg);
       controls.dispose();
       scene.traverse(o => {
         if (o.geometry) o.geometry.dispose();
         if (o.material) for (const m of [].concat(o.material)) { m.map?.dispose(); m.dispose(); }
       });
-      for (const m of [fernMat, umgMat, bodenMat, markerMat, modulMat, rahmenMat]) m.dispose();
+      for (const m of [fernMat, umgMat, bodenMat, markerMat, modulMat, rahmenMat, rahmenFuellMat, rahmenHellMat, rahmenBlauMat, werferMat]) m.dispose();
       zellen.clear();
-      statusCbs.length = auswahlCbs.length = fehlgriffCbs.length = 0;
+      statusCbs.length = auswahlCbs.length = fehlgriffCbs.length = rahmenCbs.length = 0;
       renderer.dispose();
       renderer.forceContextLoss();
       canvas.remove();
