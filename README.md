@@ -88,8 +88,6 @@ python3 server/app.py
 
 Dann <http://127.0.0.1:8000> öffnen.
 
-Die Oberfläche lässt sich auch ohne Kachel und Server mit Testdaten ansehen: `python3 -m http.server -d web 8000`, dann <http://127.0.0.1:8000/?attrappe=1> öffnen. Statt der 3D-Ansicht erscheint eine gezeichnete Hauswand, die Zahlen sind erfunden. `web/adressen.json` muss vorhanden sein (Schritt 2, ggf. mit `--bbox`).
-
 **Tests:**
 
 ```bash

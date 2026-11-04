@@ -17,8 +17,6 @@ python3 pipeline/adressen.py
 python3 server/app.py                             # http://127.0.0.1:8000
 ```
 
-Nur die Oberfläche, ohne Kachel und Server: `python3 -m http.server -d web 8000` und `http://127.0.0.1:8000/?attrappe=1` öffnen. Die 3D-Ansicht und die API werden dann durch Testdaten ersetzt.
-
 ## Tests
 
 ```bash

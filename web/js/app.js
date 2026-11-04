@@ -8,9 +8,6 @@ import { PARAMS, ladeAnnahmen, speichereAnnahmen } from './params.js';
 import { initSchritte, setzeKontext } from './schritte.js';
 
 const $ = id => document.getElementById(id);
-const Q = new URLSearchParams(location.search);
-const LOKAL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);   // Testmodus nur lokal
-const ATTRAPPE_VIEWER = LOKAL && (Q.get('attrappe') === '1' || Q.get('attrappe') === 'viewer');
 const schmal = () => matchMedia('(max-width: 999px)').matches;
 
 const st = {
@@ -126,7 +123,7 @@ function viewerHolen() {
   st.viewerP = (async () => {
     let mod;
     try {
-      mod = ATTRAPPE_VIEWER ? await import('./viewer-attrappe.js') : await import('./viewer.js');
+      mod = await import('./viewer.js');
     } catch (e) {
       console.warn('Viewer-Modul nicht ladbar', e);
       ohne3d('Die 3D-Ansicht konnte nicht laden', 'Vielleicht ist die Verbindung gerade schwach. Lade die Seite später neu – oder schätze hier grob: Wohin zeigt dein Balkon?');

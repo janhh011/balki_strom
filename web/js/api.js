@@ -1,8 +1,6 @@
 // Anbindung an POST /api/ertrag (Vertrag: docs/ARCHITEKTUR.md)
 // ---------------------------------------------------------------
 // ertrag(anfrage)  -> Antwort wie /api/ertrag
-//   Mit ?attrappe=1 oder ?attrappe=api kommt statt des Servers eine realistische, lokal erzeugte Antwort
-//   (8760 Stundenwerte, Horizont usw.), damit die Seite ohne Server getestet werden kann.
 // schaetzeJahr(...) -> dieselbe Form, synthetisch (auch für die grobe Schätzung ohne 3D)
 
 const ZEITLIMIT_MS = 45000;
@@ -19,26 +17,12 @@ export class ErtragsFehler extends Error {
 export const richtungAus = az => RICHTUNGEN[Math.round((((az % 360) + 360) % 360) / 45) % 8];
 export const azimutAus = (nx, ny) => ((Math.atan2(nx, ny) * 180 / Math.PI) + 360) % 360;
 
-// Testmodus nur auf dem eigenen Rechner – auf der echten Seite zeigt ein präparierter Link keine erfundenen Zahlen
-const LOKAL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-
-function attrappeAktiv() {
-  if (!LOKAL) return false;
-  const a = new URLSearchParams(location.search).get('attrappe');
-  return a === '1' || a === 'api';
-}
-
 export async function ertrag(anfrage, {signal} = {}) {
   const body = {
     kachel: String(anfrage.kachel), x: +anfrage.x, y: +anfrage.y, z: +anfrage.z,
     nx: +anfrage.nx, ny: +anfrage.ny, module: anfrage.module === 1 ? 1 : 2,
     aufstellung: anfrage.aufstellung === 'geneigt' ? 'geneigt' : 'senkrecht',
   };
-  if (attrappeAktiv()) {
-    await new Promise(r => setTimeout(r, 700));
-    if (signal && signal.aborted) throw new DOMException('abgebrochen', 'AbortError');
-    return attrappe(body);
-  }
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), ZEITLIMIT_MS);
   if (signal) signal.addEventListener('abort', () => ctl.abort(), {once: true});
@@ -66,36 +50,6 @@ export async function ertrag(anfrage, {signal} = {}) {
     throw new ErtragsFehler('Die Antwort des Servers war unvollständig. Versuch es bitte noch einmal.', 'antwort');
   }
   return d;
-}
-
-// ---------------------------------------------------------------- Attrappe
-function seedAus(...zahlen) { let h = 2166136261; for (const z of zahlen) { h ^= Math.round(z * 10); h = Math.imul(h, 16777619); } return h >>> 0; }
-
-function attrappe(b) {
-  const az = azimutAus(b.nx, b.ny);
-  const s = seedAus(b.x, b.y);
-  const R = rng(s);
-  // Horizont: Häuser gegenüber (~16–24°) plus ein Baum vor dem Balkon
-  const gebaeude = [], baeume = [];
-  const hBasis = 14 + R() * 10, baumAz = (az + (R() - 0.5) * 80 + 360) % 360, baumH = 10 + R() * 18;
-  for (let i = 0; i < 180; i++) {
-    const a = i * 2, d = Math.abs(((a - az + 540) % 360) - 180);              // Winkel zur Blickrichtung
-    gebaeude.push(+(d < 100 ? hBasis * (1 - 0.3 * Math.cos(a / 15)) * (d < 60 ? 1 : (100 - d) / 40) : 0).toFixed(1));
-    const db = Math.abs(((a - baumAz + 540) % 360) - 180);
-    baeume.push(+(db < 14 ? baumH * Math.cos(db / 14 * Math.PI / 2) : 0).toFixed(1));
-  }
-  const geschoss = Math.max(0, Math.round((b.z - 36) / 3));
-  const d = schaetzeJahr({azimut: az, aufstellung: b.aufstellung, module: b.module, horizont: {schritt_grad: 2, gebaeude, baeume}, himmelSicht: 0.75, seed: s});
-  return {
-    ok: true, kachel: b.kachel, azimut: +az.toFixed(1), richtung: richtungAus(az),
-    hoehe_ueber_boden_m: +(b.z - 34).toFixed(1), geschoss,
-    module: modulEcken(b, b.module, b.aufstellung),
-    ...d,
-    rand: false,
-    hinweise: ['Testdaten: Diese Zahlen stammen aus der Attrappe, nicht aus dem 3D-Modell.'],
-    wetter: 'synthetisches Referenzjahr Berlin (Attrappe)',
-    annahmen: {verluste: 0.14, albedo: 0.2},
-  };
 }
 
 export function modulEcken(p, anzahl, aufstellung) {
