@@ -187,7 +187,7 @@ class Rechner:
             n = -n
         return n
 
-    def balkon(self, k, p, n, anzahl, geneigt):
+    def balkon(self, k, p, n, anzahl, geneigt, oben_vorgabe=None):
         """Module außen vor dem Geländer. Rückgabe: Module (Ecken, Rechenpunkte), Hinweise."""
         hinweise = []
         t = np.array([-n[1], n[0]])
@@ -211,6 +211,8 @@ class Rechner:
         else:
             oben = p[2] + 0.5
         oben = float(np.clip(oben, p[2] - 0.2, p[2] + 1.3))
+        if oben_vorgabe is not None:          # vom Nutzer aufgezogener Rahmen gibt die Höhe vor
+            oben = float(oben_vorgabe)
         # Viele Balkone sind im Photogrammetrie-Mesh nur Textur auf glatter Fläche: kein Hinweis an Nutzer,
         # die Module hängen dann an der sichtbaren Fassade (= Balkonfront).
         abstand = vorn + MODUL_ABSTAND
@@ -238,7 +240,7 @@ class Rechner:
         return module, mitte, oben, hinweise
 
     # ------------------------------------------------------------ Ertrag
-    def ertrag(self, kid, x, y, z, nx, ny, anzahl=None, aufstellung="senkrecht", breite=None):
+    def ertrag(self, kid, x, y, z, nx, ny, anzahl=None, aufstellung="senkrecht", breite=None, hoehe=None):
         """breite: vom Nutzer aufgezogene Balkonbreite in m (optional). anzahl None = aus der Breite (1 oder 2)."""
         m = ph.MODUL
         passen = None
@@ -260,7 +262,8 @@ class Rechner:
         if hl < 0.3:
             raise EingabeFehler("Das ist ein Dach oder Boden. Tippe bitte auf die Wand oder das Geländer deines Balkons.")
         schluessel = (kid, round(x * 4), round(y * 4), round(z * 4), round(math.degrees(math.atan2(ny, nx)) / 2),
-                      anzahl, aufstellung, None if breite is None else round(breite * 4))
+                      anzahl, aufstellung, None if breite is None else round(breite * 4),
+                      None if hoehe is None else round(hoehe * 4))
         with self._lock:
             jetzt = time.monotonic()
             while self._ergebnisse and next(iter(self._ergebnisse.values()))[0] < jetzt - ERGEBNIS_DAUER:
@@ -269,7 +272,13 @@ class Rechner:
                 return self._ergebnisse[schluessel][1]
         p = np.array([x, y, z], float)
         n = self.wand(k, p, np.array([nx / hl, ny / hl]))
-        module, mitte, oben, hinweise = self.balkon(k, p, n, anzahl, aufstellung == "geneigt")
+        # Rahmen: Module mittig in den Rahmen; ein flacher Strich (< 0,6 m) gilt als Geländeroberkante.
+        # z ist die Unterkante des Rahmens.
+        oben_vorgabe = None
+        if breite is not None:
+            h = 0.0 if hoehe is None else float(hoehe)
+            oben_vorgabe = z + h if h < 0.6 else z + h / 2 + m["h"] / 2
+        module, mitte, oben, hinweise = self.balkon(k, p, n, anzahl, aufstellung == "geneigt", oben_vorgabe)
         if passen is not None and anzahl > passen:
             hinweise.append(f"Dein Balkon ist etwa {breite:.1f} m breit".replace(".", ",")
                             + (". Dort passt rechnerisch kein Standardmodul (1,72 m); ein kleineres Modul bringt etwas weniger."

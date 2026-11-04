@@ -39,7 +39,7 @@ LIMITS = {                                                       # (Anzahl, Zeit
     "gesamt": (int(os.environ.get("LIMIT_ERTRAG_GESAMT_STUNDE", 1500)), 3600),   # alle Nutzer zusammen
     "lesen": (int(os.environ.get("LIMIT_LESEN_MINUTE", 600)), 60),
 }
-FELDER = {"kachel", "x", "y", "z", "nx", "ny", "module", "aufstellung", "breite_m"}
+FELDER = {"kachel", "x", "y", "z", "nx", "ny", "module", "aufstellung", "breite_m", "hoehe_m"}
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("application/json", ".json")
 mimetypes.add_type("image/webp", ".webp")
@@ -79,7 +79,8 @@ def pruefe_ertrag(d, kacheln):
     return dict(kid=kid, x=zahl(d.get("x"), 360000, 420000), y=zahl(d.get("y"), 5790000, 5850000),
                 z=zahl(d.get("z"), -50, 500), nx=zahl(d.get("nx"), -1.01, 1.01), ny=zahl(d.get("ny"), -1.01, 1.01),
                 anzahl=None if module is None else int(module), aufstellung=aufstellung,
-                breite=None if d.get("breite_m") is None else zahl(d.get("breite_m"), 0.5, 15))
+                breite=None if d.get("breite_m") is None else zahl(d.get("breite_m"), 0.5, 15),
+                hoehe=None if d.get("hoehe_m") is None else zahl(d.get("hoehe_m"), 0, 8))
 
 
 class Begrenzer:
@@ -138,7 +139,7 @@ class App:
         try:
             t = time.time()
             r = self.rechner.ertrag(e["kid"], e["x"], e["y"], e["z"], e["nx"], e["ny"], e["anzahl"], e["aufstellung"],
-                                    e["breite"])
+                                    e["breite"], e["hoehe"])
             log(f"Ertrag {e['kid']}: {r['kwh_jahr']:.0f} kWh/a, {r['richtung']}, {time.time() - t:.1f} s")
             return r
         finally:
