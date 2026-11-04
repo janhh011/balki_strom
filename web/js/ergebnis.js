@@ -103,8 +103,8 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
   q('spar').textContent = mitEuro ? eur(spar) : `${kwh} kWh`;
   q('spartext').textContent = mitEuro ? 'Ersparnis pro Jahr' : 'Strom pro Jahr';
   q('balken').style.width = Math.max(2, Math.min(100, quote)) + '%';
-  q('quote').textContent = `${nf(quote)} % deines Sonnenstroms nutzt du selbst – nur dieser Teil spart Geld.`;
-  const amort = jahreSpanne(r.jahre).replace(/ Jahren$/, ' Jahre').replace(' bis ', '–');
+  q('quote').textContent = `${nf(quote)} % deines Sonnenstroms nutzt du selbst. Nur dieser Teil spart Geld.`;
+  const amort = jahreSpanne(r.jahre).replace(/ Jahren$/, ' Jahre');
   const stats = [
     ['Ertrag', `${kwh} kWh`],
     ['Verschattung', kontext.grob ? `ca. ${nf(PARAMS.grobVerschattung * 100)} %` : `${nf(Math.round(antwort.verschattung * 100))} %`],
@@ -118,7 +118,7 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
   if (!kontext.grob) tags.push(['tag-blau', sonneText(antwort.verschattung)]);
   else tags.push(['tag-sonne', 'grobe Schätzung']);
   q('tags').innerHTML = tags.map(([k, t]) => `<span class="tag ${k}">${esc(t)}</span>`).join('');
-  q('kosten').textContent = `Ein passendes Set mit Halterung kostet etwa ${nf(r.kosten.min)}–${nf(r.kosten.max)} €.`;
+  q('kosten').textContent = `Ein passendes Set mit Halterung kostet etwa ${nf(r.kosten.min)} bis ${nf(r.kosten.max)} €.`;
   q('unter').textContent = kontext.grob
     ? 'Grobe Schätzung ohne 3D-Modell: Schatten von Nachbarhäusern und Bäumen ist pauschal angenommen.'
     : '';
@@ -128,7 +128,7 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
 
   q('lang').textContent = Number.isFinite(r.netto) && r.netto > 0
     ? `Über ${PARAMS.jahre} Jahre bleiben dir nach Abzug des Kaufpreises (${eur(r.kosten.typisch)}) rund ${eur(Math.round(r.netto / 50) * 50)}.`
-    : `Bei diesem Balkon dauert es lange, bis sich das Set bezahlt macht. Ehrlich: Hier lohnt es sich vor allem fürs gute Gefühl – oder mit günstigeren Annahmen.`;
+    : `Bei diesem Balkon dauert es lange, bis sich das Set bezahlt macht. Ehrlich: Hier lohnt es sich vor allem fürs gute Gefühl oder mit günstigeren Annahmen.`;
 
   // Hinweise des Servers
   const hinweise = [...(antwort.hinweise || [])];
@@ -144,10 +144,10 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
     ['Module', `${antwort.modul.anzahl} × ${nf(antwort.modul.wp_je_modul)} Wp (${nf(antwort.modul.breite_m, 2)} × ${nf(antwort.modul.hoehe_m, 2)} m), ${a.aufstellung === 'geneigt' ? '30° ausgestellt' : 'senkrecht am Geländer'}`],
     ['Wechselrichter', `höchstens ${nf(PARAMS.wechselrichterMaxW)} W`],
     ['Strom im Jahr', `${nf(Math.round(r.erzeugt))} kWh${kontext.grob ? '' : ` (ohne Schatten wären es ${nf(Math.round(antwort.kwh_jahr_frei))} kWh)`}`],
-    ['Selbst genutzt', `${nf(Math.round(r.selbst))} kWh – der Rest geht ohne Vergütung ins Netz`],
+    ['Selbst genutzt', `${nf(Math.round(r.selbst))} kWh. Der Rest geht ohne Vergütung ins Netz.`],
     ['Haushalt', `${a.personen === 4 ? '4 und mehr' : a.personen} ${a.personen === 1 ? 'Person' : 'Personen'}, ${nf(kwhFuer(a.personen))} kWh im Jahr, ${ZUHAUSE_TEXT[a.zuhause]}`],
     ['Strompreis', `${nf(a.strompreisCt, 1)} ct/kWh, +${nf(PARAMS.strompreisSteigerung * 100)} % pro Jahr`],
-    ['Kosten des Sets', `${nf(r.kosten.min)}–${nf(r.kosten.max)} € (typisch ${nf(r.kosten.typisch)} €), Richtwert ${STAND}, 0 % MwSt.`],
+    ['Kosten des Sets', `${nf(r.kosten.min)} bis ${nf(r.kosten.max)} € (typisch ${nf(r.kosten.typisch)} €), Richtwert ${STAND}, 0 % MwSt.`],
     ['Alterung', `Module −${nf(PARAMS.degradation * 100, 1)} % Leistung pro Jahr`],
   ];
   if (!kontext.grob && antwort.sonnenstunden_frei) rows.splice(3, 0, ['Direkte Sonne', `${nf(antwort.sonnenstunden)} von ${nf(antwort.sonnenstunden_frei)} möglichen Stunden`]);

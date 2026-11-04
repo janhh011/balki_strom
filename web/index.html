@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-kaEog0AsPo4/9apXRMvp5eF3zpfBg9ltlJNNm2KUPio='; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<title>balki strom – Solarstrom vom eigenen Balkon</title>
-<meta name="description" content="Adresse eingeben, Balkon antippen – und du siehst, wie viel Strom und Geld ein Balkonkraftwerk an deinem Berliner Balkon bringt – und wie einfach es geht. Kostenlos, ohne Anmeldung, ohne Tracking.">
+<title>Balkonkraftwerk-Rechner für Berlin | balki strom</title>
+<meta name="description" content="Balkonkraftwerk-Rechner für Berlin: Ertrag, Schatten und Kosten für deinen Balkon, berechnet im 3D-Stadtmodell. Mit Schritten zu Zustimmung, Kauf, Montage und Anmeldung. Kostenlos, ohne Anmeldung, Open Source.">
 <meta name="theme-color" content="#F2F5FA">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
@@ -22,7 +22,7 @@
 <a class="skip" href="#inhalt">Zum Inhalt springen</a>
 
 <header class="kopf">
-  <a class="logo" href="./"><img src="bilder/logo.svg" alt="balki strom – zur Startseite" width="174" height="32"></a>
+  <a class="logo" href="./"><img src="bilder/logo.svg" alt="balki strom, zur Startseite" width="174" height="32"></a>
   <nav class="kopf-nav" aria-label="Projekt und Autor">
     <a class="kopf-link" href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">
       <svg viewBox="0 0 16 16" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -39,15 +39,19 @@
   <!-- 1. Adresse -->
   <section class="start" id="start" aria-labelledby="start-titel">
     <div class="start-in">
-      <p class="eyebrow"><span class="tag tag-blau">Für Mieter*innen in Berlin</span></p>
-      <h1 id="start-titel">Strom vom eigenen Balkon – lohnt sich das bei dir?</h1>
-      <p class="lead">Adresse eingeben, auf deinen Balkon tippen – und du siehst, was du sparst und wie einfach es geht.</p>
+      <h1 id="start-titel">Balkonkraftwerk-Rechner für Berlin</h1>
+      <ul class="vertrauen" aria-label="Über balki strom">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Kostenlos</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ohne Anmeldung</li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Open Source</a></li>
+      </ul>
+      <p class="lead">Ertrag, Schatten und Kosten für deinen Balkon, berechnet im 3D-Stadtmodell. Adresse eingeben, auf den Balkon tippen, Ergebnis sehen.</p>
       <form class="suche" id="suche" role="search" autocomplete="off" novalidate>
         <label for="adresse" class="suche-label">Deine Adresse</label>
         <div class="suche-feld">
           <svg class="suche-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
           <input id="adresse" type="text" inputmode="search" enterkeyhint="search" spellcheck="false" autocapitalize="off"
-                 placeholder="z. B. Uhlandstraße 12" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                 placeholder="z. B. Emser Str. 2" role="combobox" aria-autocomplete="list" aria-expanded="false"
                  aria-controls="vorschlaege" aria-describedby="suche-hilfe">
           <button class="btn" type="submit">Los</button>
         </div>
@@ -55,15 +59,10 @@
         <p id="suche-hilfe" class="suche-hilfe">Straße und Hausnummer genügen. Die Suche läuft nur in deinem Browser.</p>
         <p id="suche-status" class="sr" aria-live="polite"></p>
       </form>
-      <ul class="vertrauen" aria-label="Über balki strom">
-        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Kostenlos</li>
-        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ohne Anmeldung</li>
-        <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Open Source</a></li>
-      </ul>
       <p class="gebiet" id="gebiet"></p>
       <aside class="hinweis-nkz" aria-label="Aktion im Zentrum Kreuzberg">
-        <b>Wohnst du im Zentrum Kreuzberg?</b>
-        Dort bekommen 60 Mieter*innen ein Balkonkraftwerk geschenkt – bewerben bis 01.12.2026.
+        <b>Zentrum Kreuzberg: 60 Balkonkraftwerke für Mieter*innen</b>
+        Mieter*innen im Zentrum Kreuzberg können sich bis 01.12.2026 für ein kostenloses Balkonkraftwerk bewerben.
         <a href="https://planb2030.org/nkz" target="_blank" rel="noopener noreferrer">Mehr bei Plan B 2030</a>
       </aside>
     </div>
@@ -91,10 +90,10 @@
       <p class="viewer-hinweis" id="viewer-hinweis" role="status" hidden></p>
       <div class="ohne3d" id="ohne3d" hidden>
         <h3 id="ohne3d-titel">Die 3D-Ansicht geht hier leider nicht</h3>
-        <p id="ohne3d-text">Kein Problem – eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?</p>
+        <p id="ohne3d-text">Eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?</p>
         <div class="chips" role="radiogroup" aria-labelledby="ohne3d-titel" id="richtungen"></div>
       </div>
-      <p class="haus-fuss"><button class="link" type="button" id="ohne3d-link">Ich finde meinen Balkon nicht – grob schätzen</button></p>
+      <p class="haus-fuss"><button class="link" type="button" id="ohne3d-link">Ohne 3D-Ansicht grob schätzen</button></p>
     </section>
 
     <!-- 3. Ergebnis -->
@@ -125,8 +124,8 @@
           <p class="ek-tags" data-e="tags"></p>
           <p class="ek-kosten" data-e="kosten"></p>
           <p class="ek-unter" data-e="unter" hidden></p>
-          <a class="btn btn-voll" href="#schritte">So einfach geht's weiter</a>
-          <p class="ek-link"><a href="#rechnung" id="link-rechnung">So wird gerechnet&nbsp;→</a></p>
+          <a class="btn btn-voll" href="#schritte">Nächste Schritte</a>
+          <p class="ek-link"><a href="#rechnung" id="link-rechnung">Rechenweg und Annahmen&nbsp;→</a></p>
         </div>
         <p class="lang" data-e="lang"></p>
         <ul class="hinweise" data-e="hinweise" hidden></ul>
@@ -156,7 +155,7 @@
         </figure>
 
         <details class="rechnung" id="rechnung">
-          <summary>So wird gerechnet – und was du ändern kannst</summary>
+          <summary>Rechenweg und Annahmen</summary>
           <div class="rechnung-in">
             <div class="feld">
               <label for="preis">Dein Strompreis</label>
@@ -184,19 +183,20 @@
   <!-- 4. Schritte -->
   <section class="schritte" id="schritte" aria-labelledby="schritte-titel">
     <div class="schritte-in">
-      <h2 id="schritte-titel">So einfach geht's</h2>
+      <h2 id="schritte-titel">Schritte zum eigenen Balkonkraftwerk</h2>
       <p class="lead">Fünf Schritte, insgesamt etwa zwei Stunden Aufwand. Die meiste Zeit wartest du auf Antwort und Lieferung.</p>
       <ol class="liste-schritte">
         <li class="schritt">
-          <div class="schritt-kopf"><h3>Vermieter*in fragen</h3><span class="dauer">10 Minuten</span></div>
-          <p>Seit Oktober 2024 haben Mieter*innen einen Anspruch auf Zustimmung (§ 554 BGB, „privilegierte bauliche Veränderung“). Ablehnen darf die Vermieterseite nur aus gewichtigen Gründen – mitreden, <em>wie</em> und <em>wo</em> montiert wird, darf sie aber. Frag am besten schriftlich, bevor du kaufst.</p>
+          <div class="schritt-kopf"><h3>Zustimmung einholen</h3><span class="dauer">10 Minuten</span></div>
+          <h4 class="fall">Wenn du zur Miete wohnst</h4>
+          <p>Seit Oktober 2024 hast du einen Anspruch auf Zustimmung (§&nbsp;554 BGB, „privilegierte bauliche Veränderung“). Ablehnen darf die Vermieterseite nur aus gewichtigen Gründen. Mitreden, <em>wie</em> und <em>wo</em> montiert wird, darf sie aber. Frag am besten schriftlich, bevor du kaufst. Diese E-Mail ist schon vorbereitet:</p>
           <div class="mail">
             <div class="mail-felder">
               <div class="feld"><label for="mail-name">Dein Name</label><input id="mail-name" type="text" autocomplete="name"></div>
               <div class="feld"><label for="mail-wohnung">Wohnung <span class="klein">(optional)</span></label><input id="mail-wohnung" type="text" placeholder="z. B. 3. OG links"></div>
             </div>
             <p class="mail-betreff"><span class="label">Betreff</span> <span id="mail-betreff"></span></p>
-            <label for="mail-text" class="label">Deine E-Mail – du kannst alles ändern</label>
+            <label for="mail-text" class="label">Deine E-Mail (du kannst alles ändern)</label>
             <textarea id="mail-text" rows="14" spellcheck="true"></textarea>
             <p class="klein"><button class="link" type="button" id="mail-neu" hidden>Text neu erzeugen</button></p>
             <div class="aktionen">
@@ -206,21 +206,24 @@
             <p class="klein" id="mail-status" role="status"></p>
             <p class="klein">Die E-Mail entsteht nur in deinem Browser. Diese Seite sieht und speichert nichts davon.</p>
           </div>
+          <h4 class="fall">Wenn dir die Wohnung gehört</h4>
+          <p>In einer Eigentümergemeinschaft brauchst du einen Beschluss der Gemeinschaft. Seit Oktober 2024 kannst du ihn verlangen: Steckersolargeräte sind eine privilegierte bauliche Veränderung (§&nbsp;20 Abs.&nbsp;2 WEG). Über das <em>Wie</em>, etwa Ort und Befestigung, entscheidet die Gemeinschaft mit. Sprich am besten zuerst mit der Hausverwaltung und lass es vor der Montage auf die Tagesordnung der Eigentümerversammlung setzen.</p>
+          <p class="klein">Gehört dir das ganze Haus, musst du niemanden fragen.</p>
         </li>
         <li class="schritt">
           <div class="schritt-kopf"><h3>Set aussuchen und kaufen</h3><span class="dauer">20 Minuten</span></div>
-          <p>Im Baumarkt, Fachhandel oder online. Ein Set mit Halterung kostet meist 200 bis 550 € – seit 2023 fällt darauf keine Mehrwertsteuer an. Darauf kannst du achten:</p>
+          <p>Im Baumarkt, Fachhandel oder online. Ein Set mit Halterung kostet meist 250 bis 500 €. Seit 2023 fällt darauf keine Mehrwertsteuer an. Darauf kannst du achten:</p>
           <ul class="haken">
-            <li>Wechselrichter mit höchstens <b>800 Watt</b> – das ist die Grenze für Balkonkraftwerke.</li>
+            <li>Wechselrichter mit höchstens <b>800 Watt</b>. Das ist die Grenze für Balkonkraftwerke.</li>
             <li>Module, die auf dein Geländer passen: Breite messen! Typisch sind etwa 1,7 × 1,1 m.</li>
             <li>Eine <b>Halterung für dein Geländer</b> (Material, Stärke), am besten zum Klemmen ohne Bohren.</li>
-            <li>Ein Kabel, das bis zur nächsten Steckdose reicht – ohne Mehrfachstecker oder Kabeltrommel.</li>
-            <li>Ein Datenblatt mit Modul- und Wechselrichterleistung – das brauchst du für die Anmeldung.</li>
+            <li>Ein Kabel, das bis zur nächsten Steckdose reicht, ohne Mehrfachstecker oder Kabeltrommel.</li>
+            <li>Ein Datenblatt mit Modul- und Wechselrichterleistung. Das brauchst du für die Anmeldung.</li>
           </ul>
         </li>
         <li class="schritt">
           <div class="schritt-kopf"><h3>Montieren</h3><span class="dauer">etwa 1 Stunde</span></div>
-          <p>Zu zweit geht es leichter: Halterung ans Geländer, Module einhängen und festschrauben, Wechselrichter anschließen, Stecker rein – fertig.</p>
+          <p>Zu zweit geht es leichter: Halterung ans Geländer, Module einhängen und festschrauben, Wechselrichter anschließen, Stecker rein, fertig.</p>
           <ul class="haken">
             <li>Module sind groß und schwer: immer zu zweit tragen und von innen sichern.</li>
             <li>Alles sturmfest nach Anleitung festziehen; nichts darf herunterfallen.</li>
@@ -229,11 +232,11 @@
           </ul>
         </li>
         <li class="schritt">
-          <div class="schritt-kopf"><h3>Im Marktstammdatenregister anmelden</h3><span class="dauer">10–15 Minuten</span></div>
-          <p>Pflicht, kostenlos und online: innerhalb eines Monats, nachdem dein Balkonkraftwerk zum ersten Mal Strom macht. Eine eigene Anmeldung beim Netzbetreiber brauchst du nicht mehr – er bekommt die Daten aus dem Register.</p>
+          <div class="schritt-kopf"><h3>Im Marktstammdatenregister anmelden</h3><span class="dauer">10 bis 15 Minuten</span></div>
+          <p>Pflicht, kostenlos und online: innerhalb eines Monats, nachdem dein Balkonkraftwerk zum ersten Mal Strom macht. Eine eigene Anmeldung beim Netzbetreiber brauchst du nicht mehr. Er bekommt die Daten aus dem Register.</p>
           <ol class="unter">
             <li>Auf <a href="https://www.marktstammdatenregister.de" target="_blank" rel="noopener noreferrer">marktstammdatenregister.de</a> ein Benutzerkonto anlegen (E-Mail genügt).</li>
-            <li>„Anlage registrieren“ wählen und dort <b>Steckersolargerät</b> – das ist die vereinfachte Anmeldung.</li>
+            <li>„Anlage registrieren“ wählen und dort <b>Steckersolargerät</b>. Das ist die vereinfachte Anmeldung.</li>
             <li>Diese Angaben eintragen:</li>
           </ol>
           <dl class="mastr" id="mastr-werte"></dl>
@@ -249,8 +252,7 @@
           </ul>
         </li>
       </ol>
-      <p class="ziel">Und dann: Jeder sonnige Tag macht deine Stromrechnung ein bisschen kleiner.</p>
-    </div>
+          </div>
   </section>
 </main>
 
@@ -270,7 +272,7 @@
         <li><a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Quellcode (GitHub)</a></li>
       </ul>
     </nav>
-    <p class="klein fuss-daten">Daten: 3D-Stadtmodell (Mesh) © Land Berlin, Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen – Berlin 3D-Downloadportal, nicht kommerzielle Nutzung. Hauskoordinaten, LoD2-Gebäude, Oberflächenmodell: Geoportal Berlin, Datenlizenz Deutschland – Zero – Version 2.0. Details unter <a href="lizenzen.html">Lizenzen &amp; Datenquellen</a>.</p>
+    <p class="klein fuss-daten">Daten: 3D-Stadtmodell (Mesh) © Land Berlin, Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen, Berlin 3D-Downloadportal, nicht kommerzielle Nutzung. Hauskoordinaten, LoD2-Gebäude, Oberflächenmodell: Geoportal Berlin, Datenlizenz Deutschland Zero, Version 2.0. Details unter <a href="lizenzen.html">Lizenzen &amp; Datenquellen</a>.</p>
   </div>
 </footer>
 </body>

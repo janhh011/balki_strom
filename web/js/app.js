@@ -49,6 +49,8 @@ function hashLesen() {
 }
 
 async function anwenden() {
+  // Sprungmarken wie #schritte sind kein Zustand
+  if (location.hash.length > 1 && !location.hash.includes('=')) return;
   const h = hashLesen();
   if (h.m) st.annahmen.module = h.m;
   if (h.g) st.annahmen.aufstellung = h.g;
@@ -126,7 +128,7 @@ function viewerHolen() {
       mod = await import('./viewer.js');
     } catch (e) {
       console.warn('Viewer-Modul nicht ladbar', e);
-      ohne3d('Die 3D-Ansicht konnte nicht laden', 'Vielleicht ist die Verbindung gerade schwach. Lade die Seite später neu – oder schätze hier grob: Wohin zeigt dein Balkon?');
+      ohne3d('Die 3D-Ansicht konnte nicht laden', 'Vielleicht ist die Verbindung gerade schwach. Lade die Seite später neu oder schätze hier grob: Wohin zeigt dein Balkon?');
       return null;
     }
     try {
@@ -141,7 +143,7 @@ function viewerHolen() {
       const keinWebgl = e && (e.name === 'ViewerNichtVerfuegbar' || (mod.ViewerNichtVerfuegbar && e instanceof mod.ViewerNichtVerfuegbar));
       if (!keinWebgl) console.warn('Viewer-Fehler', e);
       ohne3d(keinWebgl ? 'Dein Gerät kann die 3D-Ansicht leider nicht zeigen' : 'Die 3D-Ansicht konnte nicht starten',
-        'Kein Problem – eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?');
+        'Eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?');
       return null;
     }
   })();
@@ -198,11 +200,11 @@ function rechneGrob() {
 // ---------------------------------------------------------------- 3. Balkon gewählt -> Ertrag
 // Rückmeldung, wenn daneben getippt wurde (verschwindet nach ein paar Sekunden)
 const FEHLGRIFF = {
-  dach: 'Das ist ein Dach – tippe auf die Hauswand oder das Geländer deines Balkons.',
-  boden: 'Das ist der Boden – tippe auf die Hauswand oder das Geländer deines Balkons.',
-  baum: 'Da ist ein Baum im Weg – dreh das Haus ein wenig und tippe auf deinen Balkon.',
+  dach: 'Das ist ein Dach. Tippe auf die Hauswand oder das Geländer deines Balkons.',
+  boden: 'Das ist der Boden. Tippe auf die Hauswand oder das Geländer deines Balkons.',
+  baum: 'Da ist ein Baum im Weg. Dreh das Haus ein wenig und tippe auf deinen Balkon.',
   unscharf: 'Bitte etwas näher heranzoomen und dann auf deinen Balkon tippen.',
-  leer: 'Da ist nichts – tippe auf die Hauswand oder das Geländer deines Balkons.',
+  leer: 'Da ist nichts. Tippe auf die Hauswand oder das Geländer deines Balkons.',
 };
 let meldungTmr = 0;
 function fehlgriff({art} = {}) {
@@ -307,6 +309,18 @@ $('ohne3d-link').addEventListener('click', () => { grobModus(); $('richtungen').
 $('nochmal').addEventListener('click', () => berechne());
 $('link-rechnung').addEventListener('click', () => { $('rechnung').open = true; });
 window.addEventListener('popstate', anwenden);
+// Seiteninterne Links (#schritte, #rechnung, #inhalt) scrollen nur, ohne den Zustand im Hash zu überschreiben
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href^="#"]');
+  if (!a || a.getAttribute('href').length < 2) return;
+  const ziel = document.getElementById(a.getAttribute('href').slice(1));
+  if (!ziel) return;
+  e.preventDefault();
+  if (ziel.tagName === 'DETAILS') ziel.open = true;
+  ziel.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+  if (!ziel.hasAttribute('tabindex')) ziel.setAttribute('tabindex', '-1');
+  ziel.focus({preventScroll: true});
+});
 
 ladeAdressen().then(D => {
   if (D) $('gebiet').textContent = `Bisher verfügbar für ${gebietText(D)}. Weitere Kieze folgen.`;

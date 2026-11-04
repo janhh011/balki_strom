@@ -303,3 +303,9 @@ textarea { min-height: 280px; resize: vertical; font-size: 15px; line-height: 22
 .lizenztext p { margin: 0 0 var(--s2); }
 .lizenztext p:last-child { margin: 0; }
 .stand { margin-top: var(--s5); }
+
+/* Fälle in Schritt 1 (Miete / Eigentum) */
+.fall { font: 600 16px/24px var(--figtree); margin: var(--s3) 0 var(--s1); }
+.schritt-kopf + .fall { margin-top: 0; }
+.mail + .fall { margin-top: var(--s4); }
+.start h1 + .vertrauen { margin: 0 0 var(--s3); }

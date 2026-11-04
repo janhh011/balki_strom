@@ -73,7 +73,7 @@ export function initSchritte() {
       const ta = $('mail-text'); ta.focus(); ta.select();
       try { ok = document.execCommand('copy'); } catch { ok = false; }
     }
-    meldung.textContent = ok ? 'Text kopiert – füg ihn in deine E-Mail oder einen Brief ein.' : 'Kopieren hat nicht geklappt. Markier den Text bitte selbst und kopier ihn.';
+    meldung.textContent = ok ? 'Text kopiert. Füg ihn in deine E-Mail oder einen Brief ein.' : 'Kopieren hat nicht geklappt. Markier den Text bitte selbst und kopier ihn.';
   });
   aktualisiere();
 }

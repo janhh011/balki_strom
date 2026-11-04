@@ -176,7 +176,7 @@ export function bindeSuche({form, input, liste, status, onWahl}) {
       info('Die Adresssuche konnte nicht laden. Lade die Seite bitte neu.');
       status.textContent = 'Die Adresssuche konnte nicht laden.';
     } else if (!treffer.length) {
-      info(`<b>Diese Adresse ist noch nicht dabei.</b> Bisher gibt es balki strom nur für ${esc(gebietText(D))}. Weitere Kieze kommen dazu – prüf sonst die Schreibweise.`);
+      info(`<b>Diese Adresse ist noch nicht dabei.</b> Bisher gibt es balki strom nur für ${esc(gebietText(D))}. Weitere Kieze kommen dazu. Prüf sonst die Schreibweise.`);
       status.textContent = 'Keine passende Adresse im bisherigen Gebiet.';
     } else {
       if (treffer.nrFehlt) info('Diese Hausnummer gibt es hier nicht. Meintest du:');
