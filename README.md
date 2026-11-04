@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <b>Lohnt sich ein Balkonkraftwerk an deinem Balkon?</b><br>
-  Adresse eingeben, das eigene Haus im 3D-Stadtmodell von Berlin sehen, auf den Balkon tippen –<br>
+  <b>Balkonkraftwerk-Simulator für Berlin</b><br>
+  Adresse eingeben, das eigene Haus im 3D-Stadtmodell von Berlin sehen, den Balkon markieren.<br>
   Ertrag, Schatten übers ganze Jahr, Ersparnis und die nächsten Schritte.
 </p>
 
