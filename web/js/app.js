@@ -28,7 +28,7 @@ function hashSchreiben(push) {
     const p = st.punkt;
     h.set('p', [p.kachel, p.x, p.y, p.z, p.nx, p.ny, p.nz || 0].join(','));
   }
-  if (st.punkt && st.breite) h.set('w', st.breite.toFixed(2));
+  if (st.punkt && st.breite) { h.set('w', st.breite.toFixed(2)); if (st.hoehe != null) h.set('hh', st.hoehe.toFixed(2)); }
   if (st.grob && st.grobAz != null) h.set('r', String(st.grobAz));
   if (st.punkt || st.grob) {
     if (!st.breite || st.moduleExplizit) h.set('m', String(st.annahmen.module));
@@ -54,6 +54,8 @@ function hashLesen() {
   if (h.get('m') === '1' || h.get('m') === '2') out.m = +h.get('m');
   const w = +h.get('w');
   if (h.has('w') && Number.isFinite(w) && w >= 0.5 && w <= 15) out.w = w;
+  const hh = +h.get('hh');
+  if (h.has('hh') && Number.isFinite(hh) && hh >= 0 && hh <= 8) out.hh = hh;
   if (h.get('g') === 'senkrecht' || h.get('g') === 'geneigt') out.g = h.get('g');
   return out;
 }
@@ -73,8 +75,8 @@ async function anwenden() {
   if (h.punkt && h.w) {
     st.grob = false; await bereit();
     // Rahmen aus Mitte der Unterkante und Breite rekonstruieren (für die Anzeige)
-    const p = h.punkt, n = Math.hypot(p.nx, p.ny) || 1, tx = -p.ny / n, ty = p.nx / n, hb = h.w / 2;
-    rahmenGezogen({...p, breite_m: h.w, a: [p.x - tx * hb, p.y - ty * hb, p.z], b: [p.x + tx * hb, p.y + ty * hb, p.z]},
+    const p = h.punkt, n = Math.hypot(p.nx, p.ny) || 1, tx = -p.ny / n, ty = p.nx / n, hb = h.w / 2, hh = h.hh || 0;
+    rahmenGezogen({...p, breite_m: h.w, hoehe_m: h.hh, a: [p.x - tx * hb, p.y - ty * hb, p.z], b: [p.x + tx * hb, p.y + ty * hb, p.z + hh]},
       {push: false, explizit: !!h.m});
   } else if (h.punkt) { st.grob = false; await bereit(); balkonGewaehlt(h.punkt, {push: false}); }
   else if (h.r != null) { grobModus(); waehleRichtung(h.r, {push: false}); }
@@ -178,7 +180,8 @@ function rahmenGezogen(r, {push = false, explizit = false} = {}) {
   $('viewer-meldung').hidden = true;
   rahmenHilfeAus();
   st.punkt = {kachel: r.kachel, x: r.x, y: r.y, z: r.z, nx: r.nx, ny: r.ny, nz: r.nz || 0};
-  st.breite = r.breite_m; st.grob = false; st.moduleExplizit = explizit;
+  st.breite = r.breite_m; st.hoehe = Number.isFinite(+r.hoehe_m) ? +r.hoehe_m : null;
+  st.grob = false; st.moduleExplizit = explizit;
   if (st.viewer) {
     st.viewer.zeigeMarker(null);
     if (typeof st.viewer.zeigeRahmen === 'function') st.viewer.zeigeRahmen(r);
@@ -320,7 +323,7 @@ async function berechne() {
   sonneVerstecken();
   try {
     const anfrage = {...st.punkt, aufstellung: st.annahmen.aufstellung};
-    if (st.breite) anfrage.breite_m = st.breite;
+    if (st.breite) { anfrage.breite_m = st.breite; if (st.hoehe != null) anfrage.hoehe_m = st.hoehe; }
     if (!st.breite || st.moduleExplizit) anfrage.module = st.annahmen.module;   // sonst wählt der Server nach der Breite
     const d = await ertrag(anfrage, {signal: ctl.signal});
     if (ctl.signal.aborted) return;

@@ -26,7 +26,11 @@ export async function ertrag(anfrage, {signal} = {}) {
   // module optional: fehlt es und ist breite_m gesetzt, wählt der Server 1 oder 2 nach der Breite
   if (anfrage.module === 1 || anfrage.module === 2) body.module = anfrage.module;
   const b = +anfrage.breite_m;
-  if (Number.isFinite(b) && b >= 0.5 && b <= 15) body.breite_m = Math.round(b * 100) / 100;
+  if (Number.isFinite(b) && b >= 0.5 && b <= 15) {
+    body.breite_m = Math.round(b * 100) / 100;
+    const h = +anfrage.hoehe_m;
+    if (Number.isFinite(h) && h >= 0 && h <= 8) body.hoehe_m = Math.round(h * 100) / 100;
+  }
   else if (!body.module) body.module = 2;
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), ZEITLIMIT_MS);

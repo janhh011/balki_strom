@@ -119,6 +119,16 @@ def test_breite_bestimmt_module():
     assert r["modul"]["anzahl"] == 2 and any("nur ein Standardmodul" in h for h in r["hinweise"]), r["hinweise"]
 
 
+def test_rahmen_gibt_hoehe_vor():
+    # Rahmen 3,6 x 1,2 m, Unterkante bei 5,9 m: Module (1,13 m hoch) mittig im Rahmen
+    r = rechner().ertrag("test", X0 + 10, Y0 - 1.5, Z0 + 5.9, 0.0, -1.0, None, "senkrecht", breite=3.6, hoehe=1.2)
+    z = np.array(r["module"])[:, :, 2]
+    assert abs(z.max() - (Z0 + 5.9 + 0.6 + 0.565)) < 0.05 and abs(z.min() - (Z0 + 5.9 + 0.6 - 0.565)) < 0.05, z
+    # flacher Strich: gilt als Geländeroberkante
+    r = rechner().ertrag("test", X0 + 10, Y0 - 1.5, Z0 + 7.0, 0.0, -1.0, None, "senkrecht", breite=3.6, hoehe=0.1)
+    assert abs(np.array(r["module"])[:, :, 2].max() - (Z0 + 7.1)) < 0.05
+
+
 def test_dach_abgelehnt():
     try:
         rechner().ertrag("test", X0 + 10, Y0 + 5, Z0 + 15, 0.0, 0.0, 1, "senkrecht")

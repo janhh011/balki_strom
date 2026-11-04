@@ -36,6 +36,12 @@ und hier verlinkt.
 
 | ID | Thema | Bereich | Prio | Aufwand | Notiz |
 |---|---|---|---|---|---|
+| V-08 | **Bäume vor dem Balkon:** Rahmen oder Tippen trifft den Baum statt der Fassade; die Module landen am Baum. Lösungsideen: Raycast durch Baum-Dreiecke hindurch auf die Fassade (Bäume nur für die Auswahl ignorieren), Bäume beim Markieren halbtransparent oder ausblendbar („Bäume ausblenden“), Kamera bevorzugt Blickwinkel ohne Baum | Viewer/UX | P1 | M | Rückmeldung PO, 04.11.2026 |
+| V-09 | **Zoomen zu träge** (Mac, Trackpad und Mausrad): Zoomgeschwindigkeit, Dämpfung und Trackpad-Pinch prüfen; auf echten Macs messen | Viewer | P1 | S | Rückmeldung PO |
+| V-10 | **Kamera hängt vom Seitenverhältnis ab:** bei hohen Fenstern (z. B. 1280×1000, Adresse Pfalzburger Straße 21) fast Draufsicht statt Fassade. Ansatz: Kandidaten unabhängig vom Seitenverhältnis bewerten (festes vertikales Sichtfeld, Abstand so, dass die Fassade in beide Richtungen passt), maximale Neigung von oben begrenzen; testen bei 1280×700/800/1000/1300, 390×844, 768×1024 und Adressen in der Mitte und am Rand | Viewer | P1 | S | Angefangen, abgebrochen (04.11.2026); nicht übernommen |
+| U-01 | **Ergebnisbereich neu ordnen:** Simulation steht im Mittelpunkt. Start/Pause und die aktuelle Leistung direkt im oder links neben dem 3D-Bild; die Rechnung rechts daneben, inhaltlich und optisch an der Simulation ausgerichtet | UX | P1 | M | Rückmeldung PO |
+| U-02 | **Ausstattung sofort wählbar** (Module, Montage) direkt beim Ergebnis, nicht weiter unten | UX | P1 | S | Rückmeldung PO |
+| U-03 | **Auf den ersten Blick eine Rechnung**, Details per Aufklappen: z. B. Ersparnis = Eigenverbrauch × Strompreis, Amortisation aus Kaufpreis und Ersparnis; jeweils „genauer ansehen“ für die ausführliche Rechnung | UX | P1 | M | Rückmeldung PO |
 | V-01 | Häuser am Kachelrand: bessere Kameraposition, Hinweis klarer (heute graue LoD2-Blöcke, Blick fast von oben) | Viewer | P2 | M | entfällt teilweise mit Nachbarkacheln |
 | V-02 | Fernansicht (vereinfachtes Mesh) wirkt von oben „verlaufen“ | Viewer | P3 | M | |
 | V-03 | Wiederherstellung nach Verlust des WebGL-Kontexts testen | Viewer | P2 | S | Code vorhanden, ungetestet |
