@@ -30,10 +30,13 @@
     </svg>
     <span class="wortmarke">balki strom</span>
   </a>
-  <a class="kopf-code" href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">
-    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span>Quellcode<span class="kopf-code-lang"> auf GitHub</span></span>
-  </a>
+  <nav class="kopf-nav" aria-label="Projekt auf GitHub">
+    <a class="kopf-code" href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span>Quellcode<span class="kopf-code-lang"> auf GitHub</span></span>
+    </a>
+    <a class="kopf-autor" href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer"><span class="sr">Autor: </span>@janhh011<span class="sr"> auf GitHub</span></a>
+  </nav>
 </header>
 
 <main id="inhalt">
@@ -245,11 +248,19 @@
 
 <footer class="fuss">
   <div class="fuss-in">
-    <h2 class="fuss-titel">Über das Projekt</h2>
-    <p><b>balki strom</b> ist kostenlos, ohne Anmeldung und nicht kommerziell: Wir verkaufen nichts und bekommen keine Provision. Wir speichern keine persönlichen Daten, setzen keine Cookies und tracken niemanden.</p>
-    <p>Der Code ist Open Source und offen einsehbar. Mitmachen und Feedback sind auf GitHub willkommen: <a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Quellcode auf GitHub ansehen</a>. Lizenz: <a href="https://github.com/janhh011/balki_strom/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GNU AGPL-3.0</a>.</p>
-    <p class="klein">Daten: 3D-Stadtmodell (Mesh) © Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen Berlin, Berlin 3D-Downloadportal – nicht kommerzielle Nutzung. Hauskoordinaten, Gebäude und Bäume: Geoportal Berlin, Datenlizenz Deutschland – Zero – Version 2.0. Schriften Sora und Figtree: SIL Open Font License.</p>
-    <p class="fuss-links"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+    <h2 class="sr">Über das Projekt</h2>
+    <p class="fuss-claim"><b>balki strom</b> · Kostenlos · Ohne&nbsp;Anmeldung · Open&nbsp;Source (AGPL-3.0)</p>
+    <p class="fuss-text">Ein nicht kommerzielles Projekt von <a href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer">Jan-Hendrik Höltkemeier</a>. Wir verkaufen nichts, bekommen keine Provision, setzen keine Cookies und tracken niemanden. Alle Werte sind Schätzungen.</p>
+    <nav aria-label="Rechtliches und Projekt">
+      <ul class="fuss-nav">
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html">Datenschutz</a></li>
+        <li><a href="barrierefreiheit.html">Barrierefreiheit</a></li>
+        <li><a href="lizenzen.html">Lizenzen &amp; Datenquellen</a></li>
+        <li><a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Quellcode (GitHub)</a></li>
+      </ul>
+    </nav>
+    <p class="klein fuss-daten">Daten: 3D-Stadtmodell (Mesh) © Land Berlin, Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen – Berlin 3D-Downloadportal, nicht kommerzielle Nutzung. Hauskoordinaten, LoD2-Gebäude, Oberflächenmodell: Geoportal Berlin, Datenlizenz Deutschland – Zero – Version 2.0. Details unter <a href="lizenzen.html">Lizenzen &amp; Datenquellen</a>.</p>
   </div>
 </footer>
 </body>

@@ -86,6 +86,7 @@ class Begrenzer:
     def __init__(self):
         self.t = defaultdict(deque)
         self.lock = threading.Lock()
+        self.aufgeraeumt = time.time()
 
     @staticmethod
     def schluessel(ip):
@@ -110,7 +111,8 @@ class Begrenzer:
             if len(q) >= n:
                 return False
             q.append(now)
-            if len(self.t) > 50000:            # Speicher begrenzen: nur abgelaufene Einträge entfernen
+            if now - self.aufgeraeumt > 60:      # jede Minute: IPs ohne Anfrage in der letzten Stunde löschen
+                self.aufgeraeumt = now
                 lang = max(f for _, f in LIMITS.values())
                 for k in [k for k, v in self.t.items() if not v or v[-1] < now - lang]:
                     del self.t[k]
@@ -225,10 +227,10 @@ def handler_fuer(app, begrenzer, vertraue_proxy):
             self.send_header("Cache-Control", "public, max-age=604800" if unveraenderlich else "no-cache")
             self.sicherheits_header()
             if rel.endswith(".html"):
+                # Die eigentliche Richtlinie (script-src mit Hash der Import-Map) steht als <meta> in jeder Seite;
+                # hier nur, was per <meta> nicht geht (frame-ancestors) und was nie erlaubt sein soll.
                 self.send_header("Content-Security-Policy",
-                                 "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; "
-                                 "script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; connect-src 'self'; "
-                                 "font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+                                 "object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
             self.end_headers()
             if not nur_kopf:
                 with open(datei, "rb") as fh:

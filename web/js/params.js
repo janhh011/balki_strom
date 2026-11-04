@@ -51,32 +51,16 @@ export const PARAMS = {
   grobVerschattung: 0.3,
 };
 
-// Laden/Speichern der vom Nutzer geänderten Annahmen (nur im eigenen Browser, freiwillig)
-const KEY = 'balki-annahmen-v1';
+// Annahmen werden NICHT im Browser gespeichert (kein localStorage, keine Cookies): jeder Besuch
+// startet mit den Standardwerten. Ausstattung (Module, Aufstellung) steht im Link hinter "#".
 const ERLAUBT = ['strompreisCt', 'personen', 'zuhause', 'module', 'aufstellung'];
 
 export function ladeAnnahmen() {
   const a = {};
   for (const k of ERLAUBT) a[k] = PARAMS[k];
-  try {
-    const s = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (s && typeof s === 'object') {
-      if (Number.isFinite(s.strompreisCt) && s.strompreisCt >= PARAMS.strompreisMinCt && s.strompreisCt <= PARAMS.strompreisMaxCt) a.strompreisCt = s.strompreisCt;
-      if (PARAMS.haushalte.some(h => h.personen === s.personen)) a.personen = s.personen;
-      if (PARAMS.zuhauseStufen.some(z => z.wert === s.zuhause)) a.zuhause = s.zuhause;
-      if (s.module === 1 || s.module === 2) a.module = s.module;
-      if (s.aufstellung === 'senkrecht' || s.aufstellung === 'geneigt') a.aufstellung = s.aufstellung;
-    }
-  } catch { /* privates Fenster, gesperrt – egal */ }
   return a;
 }
 
-export function speichereAnnahmen(a) {
-  try {
-    const o = {};
-    for (const k of ERLAUBT) o[k] = a[k];
-    localStorage.setItem(KEY, JSON.stringify(o));
-  } catch { /* egal */ }
-}
+export function speichereAnnahmen() { /* bewusst leer: nichts auf dem Gerät speichern */ }
 
 export const kwhFuer = personen => (PARAMS.haushalte.find(h => h.personen === personen) || PARAMS.haushalte[1]).kwh;

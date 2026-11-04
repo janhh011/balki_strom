@@ -3,43 +3,159 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="robots" content="noindex">
 <title>Datenschutz – balki strom</title>
+<meta name="description" content="Datenschutzerklärung von balki strom: keine Cookies, kein Tracking, keine Speicherung.">
+<meta name="theme-color" content="#F2F5FA">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23F2F5FA'/%3E%3Cpath d='M5 21l11 6 11-6-11-6z' fill='%2313243A'/%3E%3Cpath d='M9 18V8l14-4v10z' fill='%232E6BF0'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<header class="kopf"><a class="logo" href="./"><span class="wortmarke">balki strom</span></a><a class="kopf-code" href="./">Zur Startseite</a></header>
-<main class="seite">
-  <h1>Datenschutz</h1>
-  <p><mark class="platzhalter">[Platzhalter – vor dem Start vollständig ausfüllen und rechtlich prüfen lassen]</mark></p>
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
 
-  <h2>Kurz gesagt</h2>
+<header class="kopf">
+  <a class="logo" href="./" aria-label="balki strom – Startseite">
+    <svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true" focusable="false">
+      <path d="M4 27 20 36l16-9-16-9z" fill="#13243A"/>
+      <path d="M4 27v3l16 9v-3z" fill="#0b1726"/>
+      <path d="M36 27v3l-16 9v-3z" fill="#22344d"/>
+      <path d="M10 25V11l18-7v14z" fill="#2E6BF0"/>
+      <path d="M16 22.6V8.7M22 20.3V6.4M10 18l18-7" stroke="#fff" stroke-width="1" stroke-opacity=".55"/>
+    </svg>
+    <span class="wortmarke">balki strom</span>
+  </a>
+  <nav class="kopf-nav" aria-label="Projekt auf GitHub">
+    <a class="kopf-code" href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span>Quellcode<span class="kopf-code-lang"> auf GitHub</span></span>
+    </a>
+    <a class="kopf-autor" href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer"><span class="sr">Autor: </span>@janhh011<span class="sr"> auf GitHub</span></a>
+  </nav>
+</header>
+
+<main class="seite" id="inhalt">
+  <a class="zurueck" href="./"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Zur Startseite</a>
+  <h1>Datenschutz</h1>
+  <p class="lead">balki strom ist so gebaut, dass wir möglichst wenig über dich erfahren. Hier steht genau, was passiert, wenn du die Seite benutzt.</p>
+
+  <div class="kasten kasten-gut">
+    <h2 class="sr">Kurz gesagt</h2>
+    <ul>
+      <li>Keine Anmeldung, keine Cookies, kein Tracking, keine Analyse-Werkzeuge, keine Werbung.</li>
+      <li>Keine Inhalte von fremden Servern: Schriften und Programmteile liefern wir selbst aus.</li>
+      <li>Die Adresssuche läuft nur in deinem Browser. Deine Adresse wird nicht an uns gesendet.</li>
+      <li>Tippst du auf deinen Balkon, geht nur die Lage dieses Punktes an unseren Server. Wir rechnen, schicken das Ergebnis zurück und speichern nichts davon.</li>
+      <li>Die E-Mail an deine Vermieterseite entsteht nur in deinem Browser. Wir sehen sie nicht.</li>
+    </ul>
+  </div>
+
+  <nav aria-label="Inhalt dieser Seite">
+    <ol class="inhalt-liste">
+      <li><a href="#verantwortlich">Verantwortlicher</a></li>
+      <li><a href="#hosting">Hosting und Server-Protokolle</a></li>
+      <li><a href="#berechnung">Ertragsberechnung</a></li>
+      <li><a href="#browser">Was nur in deinem Browser passiert</a></li>
+      <li><a href="#speicher">Cookies und Speicher im Browser</a></li>
+      <li><a href="#extern">Kein Tracking, keine fremden Inhalte, Links</a></li>
+      <li><a href="#empfaenger">Empfänger und Drittländer</a></li>
+      <li><a href="#rechte">Deine Rechte</a></li>
+      <li><a href="#beschwerde">Beschwerde bei der Aufsichtsbehörde</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="verantwortlich">1. Verantwortlicher</h2>
+  <p>Verantwortlich im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:</p>
+  <address>
+    Jan-Hendrik Höltkemeier<br>
+    <mark class="platzhalter">[Platzhalter: Straße und Hausnummer]</mark><br>
+    <mark class="platzhalter">[Platzhalter: PLZ und Ort]</mark><br>
+    E-Mail: <mark class="platzhalter">[Platzhalter: E-Mail-Adresse]</mark>
+  </address>
+  <p>Ein Datenschutzbeauftragter ist für dieses private Projekt gesetzlich nicht vorgeschrieben. Bei Fragen zum Datenschutz schreib einfach an die E-Mail-Adresse oben.</p>
+
+  <h2 id="hosting">2. Hosting und Server-Protokolle</h2>
+  <p>Die Seite läuft auf einem Server in Deutschland bei <mark class="platzhalter">[Platzhalter: Name und Anschrift des Hosting-Anbieters, Standort des Rechenzentrums]</mark>. Mit dem Anbieter besteht ein Vertrag zur Auftragsverarbeitung nach Art.&nbsp;28 DSGVO. Die Verbindung ist per TLS (HTTPS) verschlüsselt.</p>
+  <p>Damit dein Browser die Seite laden kann, muss unser Server deine IP-Adresse kennen. Das ist technisch unvermeidbar.</p>
+  <h3>Zugriffsprotokolle des Webservers</h3>
+  <p>Der vorgeschaltete Webserver (Reverse-Proxy) protokolliert Zugriffe, um Fehler zu finden und Angriffe abzuwehren. <mark class="platzhalter">[Zu bestätigen: tatsächliche Konfiguration des Reverse-Proxy]</mark> Gespeichert werden:</p>
   <ul>
-    <li>Keine Anmeldung, keine Cookies, kein Tracking, keine Analyse-Werkzeuge.</li>
-    <li>Keine Inhalte von fremden Servern: Schriften und Programmteile liefern wir selbst aus.</li>
-    <li>Die Adresssuche läuft nur in deinem Browser. Deine eingegebene Adresse wird nicht an uns gesendet.</li>
-    <li>Wenn du auf deinen Balkon tippst, senden wir nur die Koordinaten dieses Punktes (und die gewählte Ausstattung) an unseren Server, um den Ertrag zu berechnen. <mark class="platzhalter">[Bestätigen: werden diese Anfragen gespeichert? Wenn ja, wie lange?]</mark></li>
-    <li>Die E-Mail an deine Vermieterin oder deinen Vermieter entsteht nur in deinem Browser. Wir sehen sie nicht.</li>
-    <li>Deine Annahmen (Strompreis, Haushaltsgröße usw.) merkt sich auf Wunsch nur dein eigener Browser (localStorage). Du kannst sie jederzeit über die Browser-Einstellungen löschen.</li>
+    <li>deine IP-Adresse, <b>gekürzt</b> (bei IPv4 ohne das letzte Byte, bei IPv6 nur die ersten 48 Bit), sodass sie keinem Anschluss mehr zugeordnet werden kann,</li>
+    <li>Datum und Uhrzeit, aufgerufene Datei, Statuscode, übertragene Datenmenge,</li>
+    <li>Browser-Kennung (User-Agent).</li>
+  </ul>
+  <p>Diese Protokolle werden nach <b>7 Tagen</b> automatisch gelöscht <mark class="platzhalter">[Zu bestätigen]</mark>. Sie werden nicht ausgewertet, um Profile zu bilden, und nicht mit anderen Daten zusammengeführt.</p>
+  <h3>Schutz vor Überlastung</h3>
+  <p>Unser Programm selbst schreibt keine IP-Adressen in Protokolle. Um zu verhindern, dass einzelne Anschlüsse den Server überlasten, zählt es Anfragen je IP-Adresse (bei IPv6 je /64-Netz). Dafür werden IP-Adresse und Zeitpunkt der Anfrage nur im Arbeitsspeicher gehalten, nie auf eine Festplatte geschrieben und beim Neustart des Dienstes verworfen; ältere Einträge werden laufend entfernt.</p>
+  <p><b>Rechtsgrundlage</b> für Hosting, Protokolle und Überlastschutz ist Art.&nbsp;6 Abs.&nbsp;1 lit. f DSGVO. Unser berechtigtes Interesse ist, die Seite sicher, stabil und ohne Missbrauch bereitzustellen.</p>
+
+  <h2 id="berechnung">3. Ertragsberechnung</h2>
+  <p>Wenn du in der 3D-Ansicht auf deinen Balkon tippst, sendet dein Browser an unseren Server:</p>
+  <ul>
+    <li>die Kennung des Kartenausschnitts und die Koordinaten des angetippten Punktes auf der Hauswand (Ost, Nord, Höhe in Metern),</li>
+    <li>die Ausrichtung der Wand an dieser Stelle,</li>
+    <li>deine Auswahl: ein oder zwei Module, senkrecht oder geneigt.</li>
+  </ul>
+  <p>Deine Adresse, dein Name und andere Angaben werden nicht übertragen. Der Server berechnet daraus Verschattung und Stromertrag und schickt das Ergebnis zurück. Die Anfrage wird <b>nicht gespeichert</b> und von uns keiner Person zugeordnet. Im Betriebsprotokoll des Programms steht nur, für welchen Kartenausschnitt gerechnet wurde, das Ergebnis (kWh pro Jahr, Himmelsrichtung) und die Rechenzeit – ohne IP-Adresse und ohne Koordinaten.</p>
+  <p>Weil ein Punkt an einer Hauswand ungefähr auf eine Wohnung schließen lassen kann, behandeln wir diese Angaben trotzdem vorsichtig wie personenbezogene Daten. Rechtsgrundlage ist Art.&nbsp;6 Abs.&nbsp;1 lit. f DSGVO: Wir rechnen, weil du die Berechnung angefordert hast.</p>
+  <p>Ohne 3D-Ansicht kannst du auch nur die Himmelsrichtung deines Balkons wählen. Diese grobe Schätzung rechnet dein Browser selbst; dabei wird nichts an uns gesendet.</p>
+
+  <h2 id="browser">4. Was nur in deinem Browser passiert</h2>
+  <ul>
+    <li><b>Adresssuche:</b> Dein Browser lädt einmal eine Liste der amtlichen Hauskoordinaten und sucht darin selbst. Was du eintippst, verlässt dein Gerät nicht.</li>
+    <li><b>Wirtschaftlichkeit:</b> Eigenverbrauch, Ersparnis und Amortisation rechnet dein Browser mit deinen Annahmen.</li>
+    <li><b>E-Mail an die Vermieterseite:</b> Der Text entsteht in deinem Browser. „In E-Mail-Programm öffnen“ übergibt ihn an dein eigenes E-Mail-Programm, „Text kopieren“ legt ihn in deine Zwischenablage. Wir erhalten davon nichts – auch nicht deinen Namen.</li>
+    <li><b>Link zum Ergebnis:</b> Damit Neuladen und Zurück funktionieren, stehen Adresse und Balkon-Punkt in der Adresszeile hinter dem Zeichen „#“. Dieser Teil wird von Browsern nicht an Server übertragen. Wenn du den Link teilst, teilst du damit aber auch deine Adresse.</li>
   </ul>
 
-  <h2>Verantwortliche Stelle</h2>
-  <p><mark class="platzhalter">[Name, Anschrift, E-Mail]</mark></p>
+  <h2 id="speicher">5. Cookies und Speicher im Browser</h2>
+  <p>balki strom setzt <b>keine Cookies</b>.</p>
+  <p>balki strom speichert auch sonst <b>nichts auf deinem Gerät</b> (kein <code>localStorage</code>, keine ähnlichen Techniken). Geänderte Annahmen gelten nur, solange die Seite geöffnet ist. Ein Einwilligungs-Banner ist deshalb nicht nötig.</p>
 
-  <h2>Hosting und Server-Protokolle</h2>
-  <p><mark class="platzhalter">[Hoster mit Anschrift, Auftragsverarbeitungsvertrag, Standort der Server; welche Daten der Webserver protokolliert (z. B. IP-Adresse nur gekürzt oder gar nicht), Speicherdauer, Rechtsgrundlage Art. 6 Abs. 1 lit. f DSGVO]</mark></p>
-  <p>Zum Schutz vor Überlastung begrenzt unser Server die Zahl der Anfragen je IP-Adresse. Dafür werden IP-Adressen kurzzeitig im Arbeitsspeicher gehalten und nicht dauerhaft gespeichert. <mark class="platzhalter">[mit server/app.py abgleichen]</mark></p>
+  <h2 id="extern">6. Kein Tracking, keine fremden Inhalte, Links</h2>
+  <p>Wir verwenden keine Analyse- oder Tracking-Werkzeuge, keine Werbung, keine Social-Media-Knöpfe und keine eingebetteten Inhalte anderer Anbieter (keine fremden Schriften, Karten oder Videos). Beim Besuch von balki strom wird dein Browser nur mit unserem Server verbunden.</p>
+  <p>Links zu anderen Seiten (z. B. Marktstammdatenregister der Bundesnetzagentur, Plan B 2030, Bezirksamt Friedrichshain-Kreuzberg, Verbraucherzentrale Berlin, GitHub) öffnen sich erst, wenn du sie anklickst. Wir übermitteln dabei keine Herkunftsangabe (Referrer). Auf diesen Seiten gelten die Datenschutzhinweise der jeweiligen Anbieter.</p>
 
-  <h2>Externe Links</h2>
-  <p>Links zu anderen Seiten (z. B. Marktstammdatenregister, Plan B 2030, Bezirksamt, Verbraucherzentrale, GitHub) öffnen erst, wenn du sie anklickst. Dort gelten deren Datenschutzhinweise.</p>
+  <h2 id="empfaenger">7. Empfänger und Drittländer</h2>
+  <p>Zugriff auf die Server-Daten hat nur der Hosting-Anbieter als Auftragsverarbeiter. Wir geben keine Daten an Dritte weiter und übermitteln nichts in Länder außerhalb der EU. Es gibt keine automatisierte Entscheidungsfindung oder Profilbildung im Sinne von Art.&nbsp;22 DSGVO.</p>
+  <p>Du bist nicht verpflichtet, uns Daten bereitzustellen. Ohne die Übertragung des angetippten Punktes können wir die genaue Berechnung aber nicht durchführen; die grobe Schätzung funktioniert trotzdem.</p>
 
-  <h2>Deine Rechte</h2>
-  <p><mark class="platzhalter">[Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch, Beschwerde bei der Berliner Beauftragten für Datenschutz und Informationsfreiheit]</mark></p>
+  <h2 id="rechte">8. Deine Rechte</h2>
+  <p>Du hast das Recht auf Auskunft (Art.&nbsp;15 DSGVO), Berichtigung (Art.&nbsp;16), Löschung (Art.&nbsp;17), Einschränkung der Verarbeitung (Art.&nbsp;18) und Datenübertragbarkeit (Art.&nbsp;20).</p>
+  <p><b>Widerspruchsrecht (Art.&nbsp;21 DSGVO):</b> Soweit wir Daten auf Grundlage von Art.&nbsp;6 Abs.&nbsp;1 lit. f DSGVO verarbeiten, kannst du aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit widersprechen.</p>
+  <p>Schreib dafür an die oben genannte E-Mail-Adresse. Bitte beachte: Da wir keine Anfragen speichern und Protokolle nur gekürzte IP-Adressen enthalten, können wir dir in der Regel keine Daten zuordnen (Art.&nbsp;11 DSGVO).</p>
 
-  <p class="klein">Stand: <mark class="platzhalter">[Datum]</mark></p>
+  <h2 id="beschwerde">9. Beschwerde bei der Aufsichtsbehörde</h2>
+  <p>Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren (Art.&nbsp;77 DSGVO). Zuständig für uns ist:</p>
+  <address>
+    Berliner Beauftragte für Datenschutz und Informationsfreiheit<br>
+    Alt-Moabit 59–61, 10555 Berlin<br>
+    E-Mail: mailbox@datenschutz-berlin.de<br>
+    <a href="https://www.datenschutz-berlin.de" target="_blank" rel="noopener noreferrer">www.datenschutz-berlin.de</a>
+  </address>
+
+  <h2>Änderungen</h2>
+  <p>Wenn sich die Seite oder die Rechtslage ändert, passen wir diese Erklärung an. Es gilt die jeweils hier veröffentlichte Fassung.</p>
+  <p class="klein stand">Stand: 4. November 2026</p>
 </main>
+
+<footer class="fuss">
+  <div class="fuss-in">
+    <h2 class="sr">Über das Projekt</h2>
+    <p class="fuss-claim"><b>balki strom</b> · Kostenlos · Ohne&nbsp;Anmeldung · Open&nbsp;Source (AGPL-3.0)</p>
+    <p class="fuss-text">Ein nicht kommerzielles Projekt von <a href="https://github.com/janhh011" target="_blank" rel="noopener noreferrer">Jan-Hendrik Höltkemeier</a>. Wir verkaufen nichts, bekommen keine Provision, setzen keine Cookies und tracken niemanden. Alle Werte sind Schätzungen.</p>
+    <nav aria-label="Rechtliches und Projekt">
+      <ul class="fuss-nav">
+        <li><a href="impressum.html">Impressum</a></li>
+        <li><a href="datenschutz.html" aria-current="page">Datenschutz</a></li>
+        <li><a href="barrierefreiheit.html">Barrierefreiheit</a></li>
+        <li><a href="lizenzen.html">Lizenzen &amp; Datenquellen</a></li>
+        <li><a href="https://github.com/janhh011/balki_strom" target="_blank" rel="noopener noreferrer">Quellcode (GitHub)</a></li>
+      </ul>
+    </nav>
+    <p class="klein fuss-daten">Daten: 3D-Stadtmodell (Mesh) © Land Berlin, Senatsverwaltung für Stadtentwicklung, Bauen und Wohnen – Berlin 3D-Downloadportal, nicht kommerzielle Nutzung. Hauskoordinaten, LoD2-Gebäude, Oberflächenmodell: Geoportal Berlin, Datenlizenz Deutschland – Zero – Version 2.0. Details unter <a href="lizenzen.html">Lizenzen &amp; Datenquellen</a>.</p>
+  </div>
+</footer>
 </body>
 </html>

@@ -244,3 +244,44 @@ textarea { min-height: 280px; resize: vertical; font-size: 15px; line-height: 22
 .seite h1 { margin-bottom: var(--s4); }
 .seite h2 { margin: var(--s4) 0 var(--s2); font-size: 20px; line-height: 28px; }
 .platzhalter { background: var(--sonne-tint); padding: 0 4px; border-radius: 4px; }
+
+/* Kopf: GitHub-Links (Repo + Profil) */
+.kopf-nav { display: flex; align-items: center; gap: var(--s1); flex: none; }
+.kopf-code svg { flex: none; }
+.kopf-autor { display: none; font-size: 14px; color: var(--text-2); text-decoration: none; padding: 6px 8px; border-radius: var(--r-feld); min-height: 40px; align-items: center; }
+.kopf-autor:hover { background: var(--blue-10); color: var(--navy); }
+@media (min-width: 480px) { .kopf-autor { display: inline-flex; } }
+
+/* Fuß: kompakt */
+.fuss { padding: var(--s4) var(--s3) var(--s5); font-size: 15px; line-height: 22px; }
+.fuss p { margin: 0 0 var(--s2); }
+.fuss-claim { font-weight: 600; }
+.fuss-claim b { font: 600 16px/22px var(--sora); letter-spacing: -.02em; }
+.fuss-text { color: #DCE3EE; }
+.fuss-nav { list-style: none; padding: 0; margin: var(--s3) 0; display: flex; flex-wrap: wrap; gap: 0 var(--s4); }
+.fuss-nav a { display: inline-block; padding: 6px 0; }
+.fuss .fuss-daten { margin: 0; }
+.fuss a:hover { color: var(--sonne-tint); }
+.fuss :focus-visible { outline-color: var(--sonne); }
+
+/* Unterseiten: Impressum, Datenschutz, Barrierefreiheit, Lizenzen */
+.zurueck { display: inline-flex; align-items: center; gap: 6px; margin-bottom: var(--s3); font-weight: 600; text-decoration: none; min-height: 40px; }
+.zurueck:hover { text-decoration: underline; }
+.seite h3 { margin: var(--s3) 0 var(--s1); font-size: 16px; line-height: 24px; }
+.seite ul, .seite ol { padding-left: 22px; margin: 0 0 var(--s3); }
+.seite li { margin-bottom: var(--s1); }
+.seite address { font-style: normal; margin: 0 0 var(--s3); }
+.seite .lead { margin-bottom: var(--s4); }
+.seite dl { margin: 0 0 var(--s3); }
+.seite dt { font-weight: 600; margin-top: var(--s2); }
+.seite dd { margin: 0; }
+.kasten { background: var(--weiss); border-radius: var(--r-karte); padding: var(--s3); box-shadow: var(--schatten); margin: 0 0 var(--s3); }
+.kasten > :last-child { margin-bottom: 0; }
+.kasten-hinweis { background: var(--sonne-tint); box-shadow: none; }
+.kasten-gut { background: var(--ersparnis-tint); box-shadow: none; }
+.inhalt-liste { columns: 1; }
+@media (min-width: 560px) { .inhalt-liste { columns: 2; column-gap: var(--s4); } }
+.lizenztext { overflow-wrap: anywhere; font: 400 13px/19px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--weiss); border: 1px solid var(--linie); border-radius: var(--r-feld); padding: var(--s3); margin: 0 0 var(--s3); }
+.lizenztext p { margin: 0 0 var(--s2); }
+.lizenztext p:last-child { margin: 0; }
+.stand { margin-top: var(--s5); }
