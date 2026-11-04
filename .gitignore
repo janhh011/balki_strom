@@ -16,3 +16,7 @@ __pycache__/
 # Zugangsdaten (API-Keys)
 .env
 .venv/
+
+# Mesh-Version: erzeugte Web-Daten
+web/tiles/
+web/adressen.json
