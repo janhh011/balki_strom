@@ -4,8 +4,10 @@
 export const STAND = 'November 2026';
 
 export const PARAMS = {
-  // Arbeitspreis laut Stromrechnung (ohne Grundgebühr), ct/kWh. Berliner Haushaltstarife Okt. 2026 ≈ 32–40 ct.
-  strompreisCt: 37,
+  // Arbeitspreis laut Stromrechnung (ohne Grundgebühr), ct/kWh. Recherche Nov. 2026 für Berlin:
+  // günstige Neukundentarife ≈ 31 ct (Verivox/Lichtblick Okt. 2026), Grundversorgung Vattenfall ≈ 38 ct
+  // (4.11.2026). Viele Mieter*innen haben ältere Verträge oder Grundversorgung -> Mittelwert 35 ct.
+  strompreisCt: 35,
   strompreisMinCt: 15,
   strompreisMaxCt: 80,
 
@@ -31,10 +33,11 @@ export const PARAMS = {
   aufstellung: 'senkrecht',   // 'senkrecht' (am Geländer) | 'geneigt' (30° ausgestellt)
 
   // Typisches Set inkl. Halterung, Endpreis (0 % MwSt. seit 2023). Spanne + typischer Wert (€).
-  // Alte Richtpreise (angebot.html, Okt. 2026): 1 Modul 179 € + 59 € Halterung, 2 Module 269–329 € + 99 € Halterung.
+  // Recherche Nov. 2026: 800-W-Komplettsets ohne Speicher meist 250–500 € (ADAC), Händlerangebote ab ~270 €;
+  // gute Sets 350–600 € (Balkonkraftwerk-Kompendium). Einzelmodul-Sets entsprechend günstiger.
   kosten: {
-    1: {min: 200, typisch: 250, max: 350},
-    2: {min: 300, typisch: 400, max: 550},
+    1: {min: 180, typisch: 230, max: 300},
+    2: {min: 250, typisch: 350, max: 500},
   },
   kostenGeneigtAufschlag: 40,   // ausstellbare Halterung kostet meist etwas mehr (€)
 
