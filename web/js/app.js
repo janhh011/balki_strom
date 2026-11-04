@@ -99,7 +99,17 @@ async function adresseGewaehlt(a, {push = true, fokus = true} = {}) {
     $('haus').scrollIntoView({behavior: 'smooth', block: 'start'});
   }
   const v = await viewerHolen();
-  if (v) v.zeigeOrt(a.x, a.y);
+  if (!v) return;
+  $('viewer-hinweis').hidden = true;
+  let ok = true;
+  try { ok = await v.zeigeOrt(a.x, a.y); } catch (e) { console.warn('zeigeOrt', e); ok = false; }
+  if (st.adresse !== a) return;             // inzwischen andere Adresse gewählt
+  if (ok === false) {
+    zeigeHinweis('Für diese Adresse haben wir noch kein 3D-Modell. Du kannst unten grob schätzen lassen.');
+    grobModus();
+  } else if (v.ort && v.ort.haus === 'umgebung') {
+    zeigeHinweis('Dein Haus liegt am Rand unseres 3D-Modells und ist nur vereinfacht zu sehen. Du kannst trotzdem auf die Wand tippen.');
+  }
 }
 
 function ergebnisWarten() {
@@ -125,6 +135,7 @@ function viewerHolen() {
       const v = await mod.erstelleViewer($('viewer'), {manifest: 'tiles/tiles.json', qualitaet: 'auto'});
       v.beiStatus(statusAnzeigen);
       v.beiAuswahl(p => balkonGewaehlt(p, {push: false}));
+      if (typeof v.beiFehlgriff === 'function') v.beiFehlgriff(fehlgriff);
       st.viewer = v;
       laden.hidden = true;
       return v;
@@ -187,7 +198,26 @@ function rechneGrob() {
 }
 
 // ---------------------------------------------------------------- 3. Balkon gewählt -> Ertrag
+// Rückmeldung, wenn daneben getippt wurde (verschwindet nach ein paar Sekunden)
+const FEHLGRIFF = {
+  dach: 'Das ist ein Dach – tippe auf die Hauswand oder das Geländer deines Balkons.',
+  boden: 'Das ist der Boden – tippe auf die Hauswand oder das Geländer deines Balkons.',
+  baum: 'Da ist ein Baum im Weg – dreh das Haus ein wenig und tippe auf deinen Balkon.',
+  unscharf: 'Bitte etwas näher heranzoomen und dann auf deinen Balkon tippen.',
+  leer: 'Da ist nichts – tippe auf die Hauswand oder das Geländer deines Balkons.',
+};
+let meldungTmr = 0;
+function fehlgriff({art} = {}) {
+  const m = $('viewer-meldung');
+  m.textContent = FEHLGRIFF[art] || FEHLGRIFF.leer;
+  m.hidden = false;
+  clearTimeout(meldungTmr);
+  meldungTmr = setTimeout(() => { m.hidden = true; }, 4000);
+}
+function zeigeHinweis(text) { const h = $('viewer-hinweis'); h.textContent = text; h.hidden = false; }
+
 function balkonGewaehlt(p, {push}) {
+  $('viewer-meldung').hidden = true;
   st.punkt = p; st.grob = false;
   $('viewer-tipp').hidden = true;
   if (st.viewer) st.viewer.zeigeMarker(p.x, p.y, p.z);
@@ -277,6 +307,7 @@ baueRichtungen();
 $('andere-adresse').addEventListener('click', () => { $('adresse').select(); $('adresse').focus(); window.scrollTo({top: 0, behavior: 'smooth'}); });
 $('ohne3d-link').addEventListener('click', () => { grobModus(); $('richtungen').querySelector('input').focus(); });
 $('nochmal').addEventListener('click', () => berechne());
+$('link-rechnung').addEventListener('click', () => { $('rechnung').open = true; });
 window.addEventListener('popstate', anwenden);
 
 ladeAdressen().then(D => {

@@ -187,16 +187,8 @@ class Rechner:
         else:
             oben = p[2] + 0.5
         oben = float(np.clip(oben, p[2] - 0.2, p[2] + 1.3))
-        # Balkon erkannt, wenn die Wand in irgendeiner Höhe zwischen 1,5 m unter und 2,5 m über dem Punkt
-        # deutlich hinter der Vorderkante liegt (Brüstung vor zurückliegender Wand, Loggia, Platte)
-        zurueck = 0.0
-        for dz in np.arange(-1.5, 2.51, 0.25):
-            ebene = (np.abs(u) < 0.9) & (np.abs(z - (p[2] + dz)) < 0.15) & (o > -3.5)
-            if ebene.sum() >= 8:
-                zurueck = max(zurueck, vorn - float(np.median(o[ebene])))
-        if zurueck < 0.4:
-            hinweise.append("An dieser Stelle ist die Fassade im 3D-Modell glatt – bei verglasten oder "
-                            "eingezogenen Balkonen ist das normal. Wir rechnen mit Modulen direkt an dieser Stelle.")
+        # Viele Balkone sind im Photogrammetrie-Mesh nur Textur auf glatter Fläche: kein Hinweis an Nutzer,
+        # die Module hängen dann an der sichtbaren Fassade (= Balkonfront).
         abstand = vorn + MODUL_ABSTAND
         m = ph.MODUL
         breite = anzahl * m["w"] + (anzahl - 1) * m["gap"]

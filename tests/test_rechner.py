@@ -101,7 +101,7 @@ def test_normale_falsch_herum():
 def test_wand_ohne_balkon():
     r = rechner().ertrag("test", X0 - 20, Y0, Z0 + 10, 0.0, -1.0, 1, "senkrecht")
     assert r["richtung"] == "Süd"
-    assert r["hinweise"], "Hinweis 'kein Balkon erkannt' erwartet"
+    assert np.array(r["module"])[:, :, 1].max() < Y0, "Module vor der glatten Wand"
 
 
 def test_geneigt_mehr_ertrag_frei():

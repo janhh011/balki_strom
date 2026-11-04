@@ -94,25 +94,37 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
   el.hidden = false;
   q('laden').hidden = true; q('fehler').hidden = true; q('inhalt').hidden = false;
 
-  const spar = rund(r.spar);
-  q('ort').textContent = kontext.adresse ? `Dein Ergebnis für ${kontext.adresse}` : 'Dein Ergebnis';
-  q('titel').innerHTML = r.spar >= 5
-    ? `Dein Balkon spart rund <span class="kpi-zahl">${eur(spar)}</span> im Jahr.`
-    : `Dein Balkon macht rund <span class="kpi-zahl">${nf(rund(r.erzeugt))} kWh</span> Strom im Jahr.`;
+  // Ergebnis-Karte wie im Styleguide: Titel + Richtungs-Tag, Zahl zuerst, Balken, drei Kennzahlen
+  const spar = rund(r.spar), mitEuro = r.spar >= 5, quote = Math.round(r.quote * 100);
+  const kwh = nf(rund(r.erzeugt));
+  q('ort').textContent = kontext.adresse || '';
+  q('richtung').textContent = antwort.richtung || '';
+  q('richtung').hidden = !antwort.richtung;
+  q('spar').textContent = mitEuro ? eur(spar) : `${kwh} kWh`;
+  q('spartext').textContent = mitEuro ? 'Ersparnis pro Jahr' : 'Strom pro Jahr';
+  q('balken').style.width = Math.max(2, Math.min(100, quote)) + '%';
+  q('quote').textContent = `${nf(quote)} % deines Sonnenstroms nutzt du selbst – nur dieser Teil spart Geld.`;
+  const amort = jahreSpanne(r.jahre).replace(/ Jahren$/, ' Jahre').replace(' bis ', '–');
+  const stats = [
+    ['Ertrag', `${kwh} kWh`],
+    ['Verschattung', kontext.grob ? `ca. ${nf(PARAMS.grobVerschattung * 100)} %` : `${nf(Math.round(antwort.verschattung * 100))} %`],
+    ['Amortisation', amort],
+  ];
+  q('kpis').innerHTML = stats.map(([t, z]) => `<div class="ek-stat"><dt>${t}</dt><dd>${esc(z)}</dd></div>`).join('');
+  const stock = stockText(antwort.geschoss);
+  const tags = [];
+  if (stock) tags.push(['tag-blau', stock]);
+  tags.push(['tag-blau', `${antwort.modul.anzahl} ${antwort.modul.anzahl === 1 ? 'Modul' : 'Module'} · ${a.aufstellung === 'geneigt' ? 'geneigt' : 'senkrecht'}`]);
+  if (!kontext.grob) tags.push(['tag-blau', sonneText(antwort.verschattung)]);
+  else tags.push(['tag-sonne', 'grobe Schätzung']);
+  q('tags').innerHTML = tags.map(([k, t]) => `<span class="tag ${k}">${esc(t)}</span>`).join('');
+  q('kosten').textContent = `Ein passendes Set mit Halterung kostet etwa ${nf(r.kosten.min)}–${nf(r.kosten.max)} €.`;
   q('unter').textContent = kontext.grob
     ? 'Grobe Schätzung ohne 3D-Modell: Schatten von Nachbarhäusern und Bäumen haben wir pauschal angenommen.'
-    : 'Hier siehst du, wie wir darauf kommen.';
-
-  const stock = stockText(antwort.geschoss);
-  const kpis = [
-    ['Strom im Jahr', `${nf(rund(r.erzeugt))} kWh`, `davon nutzt du rund ${nf(Math.round(r.quote * 100))} % selbst`],
-    ['Ausrichtung', antwort.richtung || '–', [stock, kontext.grob ? '' : sonneText(antwort.verschattung)].filter(Boolean).join(' · ')],
-    ['Schatten', kontext.grob ? 'pauschal' : `−${nf(Math.round(antwort.verschattung * 100))} %`, kontext.grob ? `angenommen: −${nf(PARAMS.grobVerschattung * 100)} %` : 'Ertrag weniger durch Häuser und Bäume'],
-    ['Set kostet etwa', `${nf(r.kosten.min)}–${nf(r.kosten.max)} €`, `${antwort.modul.anzahl} ${antwort.modul.anzahl === 1 ? 'Modul' : 'Module'} mit Halterung`],
-    ['Bezahlt nach', jahreSpanne(r.jahre), 'danach sparst du jedes Jahr'],
-  ];
-  q('kpis').innerHTML = kpis.map(([t, z, s], i) =>
-    `<div class="kpi${i === 4 ? ' kpi-gruen' : ''}"><dt>${t}</dt><dd><span class="kpi-wert">${esc(z)}</span><span class="kpi-sub">${esc(s)}</span></dd></div>`).join('');
+    : '';
+  q('unter').hidden = !kontext.grob;
+  q('ansage').textContent = (mitEuro ? `Dein Balkon spart rund ${eur(spar)} im Jahr. ` : `Dein Balkon macht rund ${kwh} kWh Strom im Jahr. `)
+    + `Ertrag ${kwh} kWh, bezahlt nach ${jahreSpanne(r.jahre)}.`;
 
   q('lang').textContent = Number.isFinite(r.netto) && r.netto > 0
     ? `Über ${PARAMS.jahre} Jahre bleiben dir nach Abzug des Kaufpreises (${eur(r.kosten.typisch)}) rund ${eur(Math.round(r.netto / 50) * 50)}.`
