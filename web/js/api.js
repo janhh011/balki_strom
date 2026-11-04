@@ -20,9 +20,14 @@ export const azimutAus = (nx, ny) => ((Math.atan2(nx, ny) * 180 / Math.PI) + 360
 export async function ertrag(anfrage, {signal} = {}) {
   const body = {
     kachel: String(anfrage.kachel), x: +anfrage.x, y: +anfrage.y, z: +anfrage.z,
-    nx: +anfrage.nx, ny: +anfrage.ny, module: anfrage.module === 1 ? 1 : 2,
+    nx: +anfrage.nx, ny: +anfrage.ny,
     aufstellung: anfrage.aufstellung === 'geneigt' ? 'geneigt' : 'senkrecht',
   };
+  // module optional: fehlt es und ist breite_m gesetzt, wählt der Server 1 oder 2 nach der Breite
+  if (anfrage.module === 1 || anfrage.module === 2) body.module = anfrage.module;
+  const b = +anfrage.breite_m;
+  if (Number.isFinite(b) && b >= 0.5 && b <= 15) body.breite_m = Math.round(b * 100) / 100;
+  else if (!body.module) body.module = 2;
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), ZEITLIMIT_MS);
   if (signal) signal.addEventListener('abort', () => ctl.abort(), {once: true});
@@ -71,6 +76,9 @@ function rng(seed) {
   let a = seed >>> 0;
   return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
+
+// Sonnenstand im Format von viewer.js (Ersatz, falls der Viewer nicht geladen ist)
+export function sonnenstandErsatz(date) { const s = sonne(date.getTime(), BERLIN.lat, BERLIN.lon); return {azimut: s.az, hoehe: s.el}; }
 
 // Sonnenstand (vereinfachter NOAA-Algorithmus); ms = UTC-Zeitstempel -> {el, az} in Grad (az von Nord im Uhrzeigersinn)
 function sonne(ms, lat, lon) {

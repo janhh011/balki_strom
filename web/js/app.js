@@ -1,11 +1,12 @@
-// balki strom – Ablauf der Seite: Adresse -> Haus in 3D -> Balkon antippen -> Ergebnis -> Schritte
-// Zustand steht im URL-Hash (#a=Straße|Nr&p=kachel,x,y,z,nx,ny,nz&m=2&g=senkrecht | &r=180 für die grobe Schätzung),
+// balki strom: Adresse -> Haus in 3D -> Balkon als Rahmen aufziehen (oder antippen) -> Ergebnis -> Schritte
+// Zustand steht im URL-Hash (#a=Straße|Nr&p=kachel,x,y,z,nx,ny,nz&w=2.4&m=2&g=senkrecht | &r=180 für die grobe Schätzung),
 // damit Neuladen und Zurück funktionieren. Annahmen (Strompreis, Haushalt) merkt sich nur der eigene Browser.
 import { ladeAdressen, bindeSuche, findeGenau, adressText, gebietText } from './suche.js';
 import { ertrag, schaetzeJahr, richtungAus, ErtragsFehler } from './api.js';
 import { zeigeErgebnis, zeigeLaden, zeigeFehler } from './ergebnis.js';
 import { PARAMS, ladeAnnahmen, speichereAnnahmen } from './params.js';
 import { initSchritte, setzeKontext } from './schritte.js';
+import { initSonne, sonneZeigen, sonneVerstecken } from './sonne.js';
 
 const $ = id => document.getElementById(id);
 const schmal = () => matchMedia('(max-width: 999px)').matches;
@@ -13,6 +14,9 @@ const schmal = () => matchMedia('(max-width: 999px)').matches;
 const st = {
   adresse: null, punkt: null, grobAz: null, antwort: null, grob: false,
   annahmen: ladeAnnahmen(), kein3d: false, viewer: null, viewerP: null, abbruch: null,
+  breite: null,            // Breite des aufgezogenen Rahmens (m); null = angetippt
+  moduleExplizit: false,   // Modulzahl selbst gewählt (sonst wählt der Server nach der Breite)
+  rahmenMoeglich: false, modus: 'rahmen', viewerMod: null,
 };
 const E = $('ergebnis');
 
@@ -24,8 +28,12 @@ function hashSchreiben(push) {
     const p = st.punkt;
     h.set('p', [p.kachel, p.x, p.y, p.z, p.nx, p.ny, p.nz || 0].join(','));
   }
+  if (st.punkt && st.breite) h.set('w', st.breite.toFixed(2));
   if (st.grob && st.grobAz != null) h.set('r', String(st.grobAz));
-  if (st.punkt || st.grob) { h.set('m', String(st.annahmen.module)); h.set('g', st.annahmen.aufstellung); }
+  if (st.punkt || st.grob) {
+    if (!st.breite || st.moduleExplizit) h.set('m', String(st.annahmen.module));
+    h.set('g', st.annahmen.aufstellung);
+  }
   const url = location.pathname + location.search + (h.toString() ? '#' + h.toString() : '');
   if (url === location.pathname + location.search + location.hash) return;
   history[push ? 'pushState' : 'replaceState'](null, '', url);
@@ -44,6 +52,8 @@ function hashLesen() {
   const r = +h.get('r');
   if (h.has('r') && Number.isFinite(r) && r >= 0 && r < 360) out.r = r;
   if (h.get('m') === '1' || h.get('m') === '2') out.m = +h.get('m');
+  const w = +h.get('w');
+  if (h.has('w') && Number.isFinite(w) && w >= 0.5 && w <= 15) out.w = w;
   if (h.get('g') === 'senkrecht' || h.get('g') === 'geneigt') out.g = h.get('g');
   return out;
 }
@@ -60,39 +70,53 @@ async function anwenden() {
   const a = findeGenau(D, h.s, h.n);
   if (!a) { zurueckZumStart(false); return; }
   if (!st.adresse || st.adresse !== a) await adresseGewaehlt(a, {push: false, fokus: false});
-  if (h.punkt) { st.grob = false; await bereit(); balkonGewaehlt(h.punkt, {push: false}); }
+  if (h.punkt && h.w) {
+    st.grob = false; await bereit();
+    // Rahmen aus Mitte der Unterkante und Breite rekonstruieren (für die Anzeige)
+    const p = h.punkt, n = Math.hypot(p.nx, p.ny) || 1, tx = -p.ny / n, ty = p.nx / n, hb = h.w / 2;
+    rahmenGezogen({...p, breite_m: h.w, a: [p.x - tx * hb, p.y - ty * hb, p.z], b: [p.x + tx * hb, p.y + ty * hb, p.z]},
+      {push: false, explizit: !!h.m});
+  } else if (h.punkt) { st.grob = false; await bereit(); balkonGewaehlt(h.punkt, {push: false}); }
   else if (h.r != null) { grobModus(); waehleRichtung(h.r, {push: false}); }
   else if (st.punkt || st.grob) {
     // zurück zu "noch kein Balkon gewählt"
     if (st.abbruch) st.abbruch.abort();
-    st.punkt = null; st.grob = false; st.antwort = null;
-    if (st.viewer) { st.viewer.zeigeMarker(null); st.viewer.zeigeModule(null); }
+    st.punkt = null; st.grob = false; st.antwort = null; st.breite = null;
+    viewerLeeren();
     ergebnisWarten();
   }
 }
 
+function viewerLeeren() {
+  sonneVerstecken();
+  if (!st.viewer) return;
+  st.viewer.zeigeMarker(null); st.viewer.zeigeModule(null);
+  if (typeof st.viewer.zeigeRahmen === 'function') st.viewer.zeigeRahmen(null);
+}
+
 // ---------------------------------------------------------------- 1. Adresse
 function zurueckZumStart(fokus = true) {
-  st.adresse = null; st.punkt = null; st.antwort = null; st.grob = false;
+  st.adresse = null; st.punkt = null; st.antwort = null; st.grob = false; st.breite = null;
+  sonneVerstecken();
   document.body.classList.remove('hat-adresse');
   $('arbeit').hidden = true;
   suche.setze(null);
-  setzeKontext({adresse: null});
+  setzeKontext({adresse: null, berechnet: false});
   if (fokus) $('adresse').focus();
 }
 
 async function adresseGewaehlt(a, {push = true, fokus = true} = {}) {
   if (st.abbruch) st.abbruch.abort();
-  st.adresse = a; st.punkt = null; st.antwort = null; st.grob = false; st.grobAz = null;
-  if (st.viewer) { st.viewer.zeigeMarker(null); st.viewer.zeigeModule(null); }
+  st.adresse = a; st.punkt = null; st.antwort = null; st.grob = false; st.grobAz = null; st.breite = null; st.moduleExplizit = false;
+  viewerLeeren();
   suche.setze(a);
   document.body.classList.add('hat-adresse');
   $('arbeit').hidden = false;
   $('haus-adresse').textContent = `${adressText(a)}, ${a.p} Berlin`;
-  if (!st.kein3d) { $('ohne3d').hidden = true; $('ohne3d-link').parentElement.hidden = false; $('haus-titel').textContent = 'Tippe auf deinen Balkon'; }
+  if (!st.kein3d) { $('ohne3d').hidden = true; $('ohne3d-link').parentElement.hidden = false; titelSetzen(); }
   $('richtungen').querySelectorAll('input').forEach(i => { i.checked = false; });
   ergebnisWarten();
-  setzeKontext({adresse: a});
+  setzeKontext({adresse: a, berechnet: false});
   if (push) hashSchreiben(true);
   if (fokus) {
     $('haus-titel').focus({preventScroll: true});
@@ -107,9 +131,60 @@ async function adresseGewaehlt(a, {push = true, fokus = true} = {}) {
   if (ok === false) {
     zeigeHinweis('Für dieses Gebiet gibt es noch kein 3D-Modell. Unten kannst du grob schätzen lassen.');
     grobModus();
-  } else if (v.ort && v.ort.haus === 'umgebung') {
-    zeigeHinweis('Dein Haus liegt am Rand des 3D-Modells und ist nur vereinfacht zu sehen. Du kannst trotzdem auf die Wand tippen.');
+    return;
   }
+  if (v.ort && v.ort.haus === 'umgebung') {
+    zeigeHinweis(st.rahmenMoeglich
+      ? 'Dein Haus liegt am Rand des 3D-Modells und ist nur vereinfacht zu sehen. Du kannst trotzdem einen Rahmen auf die Wand ziehen.'
+      : 'Dein Haus liegt am Rand des 3D-Modells und ist nur vereinfacht zu sehen. Du kannst trotzdem auf die Wand tippen.');
+  }
+  if (st.rahmenMoeglich) { setzeModus(st.modus); if (!st.punkt) rahmenHilfeZeigen(); }
+}
+
+// ---------------------------------------------------------------- Rahmen ziehen / Ansicht drehen
+const touch = () => matchMedia('(pointer: coarse)').matches;
+function titelSetzen() {
+  $('haus-titel').textContent = st.rahmenMoeglich ? 'Markiere deinen Balkon' : 'Tippe auf deinen Balkon';
+  $('warten-text').textContent = st.rahmenMoeglich
+    ? 'Such im Bild deinen Balkon und zieh einen Rahmen über seine Breite. Dann werden Sonne und Schatten für genau diese Stelle durchgerechnet.'
+    : 'Such im Bild deinen Balkon und tippe darauf. Dann werden Sonne und Schatten für genau diese Stelle durchgerechnet.';
+}
+function setzeModus(m) {
+  st.modus = m === 'drehen' ? 'drehen' : 'rahmen';
+  document.querySelectorAll('input[name=modus]').forEach(i => { i.checked = i.value === st.modus; });
+  if (st.viewer && typeof st.viewer.setzeModus === 'function') st.viewer.setzeModus(st.modus);
+  $('modus-tipp').textContent = st.modus === 'rahmen'
+    ? (touch() ? 'Ein Finger zieht den Rahmen. Mit zwei Fingern drehen und zoomen.' : 'Linke Maustaste zieht den Rahmen. Rechte Maustaste dreht, Mausrad zoomt.')
+    : (touch() ? 'Ein Finger dreht die Ansicht, zwei Finger zoomen. Kurz tippen wählt eine Stelle.' : 'Ziehen dreht die Ansicht, Mausrad zoomt. Klicken wählt eine Stelle.');
+  if (st.modus === 'drehen') rahmenHilfeAus();
+}
+let hilfeTmr = 0;
+function rahmenHilfeZeigen() {
+  const h = $('rahmen-hilfe');
+  h.hidden = false; h.classList.remove('aus');
+  h.classList.toggle('bewegt', !matchMedia('(prefers-reduced-motion: reduce)').matches);
+  clearTimeout(hilfeTmr);
+  hilfeTmr = setTimeout(rahmenHilfeAus, 3 * 2400 + 400);     // drei Durchläufe, dann ausblenden
+}
+function rahmenHilfeAus() {
+  const h = $('rahmen-hilfe');
+  clearTimeout(hilfeTmr);
+  if (h.hidden) return;
+  h.classList.add('aus');
+  setTimeout(() => { h.hidden = true; h.classList.remove('aus'); }, 400);
+}
+
+function rahmenGezogen(r, {push = false, explizit = false} = {}) {
+  $('viewer-meldung').hidden = true;
+  rahmenHilfeAus();
+  st.punkt = {kachel: r.kachel, x: r.x, y: r.y, z: r.z, nx: r.nx, ny: r.ny, nz: r.nz || 0};
+  st.breite = r.breite_m; st.grob = false; st.moduleExplizit = explizit;
+  if (st.viewer) {
+    st.viewer.zeigeMarker(null);
+    if (typeof st.viewer.zeigeRahmen === 'function') st.viewer.zeigeRahmen(r);
+  }
+  hashSchreiben(push);
+  berechne();
 }
 
 function ergebnisWarten() {
@@ -136,7 +211,11 @@ function viewerHolen() {
       v.beiStatus(statusAnzeigen);
       v.beiAuswahl(p => balkonGewaehlt(p, {push: false}));
       if (typeof v.beiFehlgriff === 'function') v.beiFehlgriff(fehlgriff);
-      st.viewer = v;
+      st.rahmenMoeglich = typeof v.beiRahmen === 'function' && typeof v.setzeModus === 'function';
+      if (st.rahmenMoeglich) v.beiRahmen(r => rahmenGezogen(r, {push: false}));
+      $('modus-zeile').hidden = !st.rahmenMoeglich;
+      titelSetzen();
+      st.viewer = v; st.viewerMod = mod;
       laden.hidden = true;
       return v;
     } catch (e) {
@@ -158,7 +237,7 @@ function statusAnzeigen({ladend, fortschritt = 0, text = ''}) {
   const pct = Math.round(Math.max(0, Math.min(1, fortschritt)) * 100);
   $('viewer-balken').style.width = pct + '%';
   laden.querySelector('[role=progressbar]').setAttribute('aria-valuenow', String(pct));
-  $('viewer-tipp').hidden = ladend || !!st.punkt;
+  $('viewer-tipp').hidden = ladend || !!st.punkt || st.rahmenMoeglich;
 }
 
 function ohne3d(titel, text) {
@@ -184,9 +263,9 @@ function baueRichtungen() {
   $('richtungen').addEventListener('change', e => waehleRichtung(+e.target.value, {push: false}));
 }
 function waehleRichtung(az, {push}) {
-  st.grob = true; st.grobAz = az; st.punkt = null;
+  st.grob = true; st.grobAz = az; st.punkt = null; st.breite = null;
   const r = $('richtungen').querySelector(`input[value="${az}"]`); if (r) r.checked = true;
-  if (st.viewer) { st.viewer.zeigeMarker(null); st.viewer.zeigeModule(null); }
+  viewerLeeren();
   hashSchreiben(push);
   rechneGrob();
 }
@@ -209,7 +288,10 @@ const FEHLGRIFF = {
 let meldungTmr = 0;
 function fehlgriff({art} = {}) {
   const m = $('viewer-meldung');
-  m.textContent = FEHLGRIFF[art] || FEHLGRIFF.leer;
+  let t = FEHLGRIFF[art] || FEHLGRIFF.leer;
+  if (st.rahmenMoeglich && st.modus === 'rahmen') t = t.replace('Tippe auf die Hauswand oder das Geländer deines Balkons.', 'Zieh den Rahmen auf der Hauswand über deinen Balkon.')
+    .replace('tippe auf deinen Balkon', 'zieh den Rahmen über deinen Balkon').replace('auf deinen Balkon tippen', 'den Rahmen über deinen Balkon ziehen');
+  m.textContent = t;
   m.hidden = false;
   clearTimeout(meldungTmr);
   meldungTmr = setTimeout(() => { m.hidden = true; }, 4000);
@@ -218,7 +300,9 @@ function zeigeHinweis(text) { const h = $('viewer-hinweis'); h.textContent = tex
 
 function balkonGewaehlt(p, {push}) {
   $('viewer-meldung').hidden = true;
-  st.punkt = p; st.grob = false;
+  rahmenHilfeAus();
+  st.punkt = p; st.grob = false; st.breite = null;     // Antippen: wie bisher mit der gewählten Modulzahl
+  if (st.viewer && typeof st.viewer.zeigeRahmen === 'function') st.viewer.zeigeRahmen(null);
   $('viewer-tipp').hidden = true;
   if (st.viewer) st.viewer.zeigeMarker(p.x, p.y, p.z);
   hashSchreiben(push);
@@ -233,12 +317,18 @@ async function berechne() {
   E.querySelector('[data-e="warten"]').hidden = true;
   zeigeLaden(E);
   setzeWahlAktiv(false);
+  sonneVerstecken();
   try {
-    const d = await ertrag({...st.punkt, module: st.annahmen.module, aufstellung: st.annahmen.aufstellung}, {signal: ctl.signal});
+    const anfrage = {...st.punkt, aufstellung: st.annahmen.aufstellung};
+    if (st.breite) anfrage.breite_m = st.breite;
+    if (!st.breite || st.moduleExplizit) anfrage.module = st.annahmen.module;   // sonst wählt der Server nach der Breite
+    const d = await ertrag(anfrage, {signal: ctl.signal});
     if (ctl.signal.aborted) return;
     st.antwort = d;
+    if (d.modul && (d.modul.anzahl === 1 || d.modul.anzahl === 2)) { st.annahmen.module = d.modul.anzahl; syncWahl(); }
     if (st.viewer && Array.isArray(d.module)) st.viewer.zeigeModule(d.module);
     render(false, true);
+    if (st.viewer) sonneZeigen(d, {v: st.viewer, stand: st.viewerMod && st.viewerMod.sonnenstand});
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     zeigeFehler(E, e instanceof ErtragsFehler ? e.message : 'Da ist etwas schiefgegangen. Versuch es bitte noch einmal.');
@@ -254,7 +344,7 @@ function render(grob, neu = false) {
   requestAnimationFrame(() => setTimeout(() => {
     const d = st.antwort; if (!d) return;
     zeigeErgebnis(E, d, st.annahmen, {adresse: st.adresse ? adressText(st.adresse) : '', grob});
-    setzeKontext({module: d.modul.anzahl, wpJeModul: d.modul.wp_je_modul, breite: d.modul.breite_m, hoehe: d.modul.hoehe_m, aufstellung: st.annahmen.aufstellung});
+    setzeKontext({berechnet: true, module: d.modul.anzahl, wpJeModul: d.modul.wp_je_modul, breite: d.modul.breite_m, hoehe: d.modul.hoehe_m, aufstellung: st.annahmen.aufstellung});
     if (neu && schmal()) E.scrollIntoView({behavior: 'smooth', block: 'start'});
   }, 30));
 }
@@ -277,7 +367,7 @@ function baueAnnahmen() {
     st.annahmen[name] = +i.value; speichereAnnahmen(st.annahmen); neuRechnenLokal();
   }));
   document.querySelectorAll('input[name=module]').forEach(i => i.addEventListener('change', () => {
-    st.annahmen.module = +i.value; speichereAnnahmen(st.annahmen); hashSchreiben(false); berechne();
+    st.annahmen.module = +i.value; st.moduleExplizit = true; speichereAnnahmen(st.annahmen); hashSchreiben(false); berechne();
   }));
   document.querySelectorAll('input[name=aufstellung]').forEach(i => i.addEventListener('change', () => {
     st.annahmen.aufstellung = i.value; speichereAnnahmen(st.annahmen); hashSchreiben(false); berechne();
@@ -302,7 +392,9 @@ const suche = bindeSuche({
   onWahl: a => adresseGewaehlt(a, {push: true}),
 });
 initSchritte();
+initSonne();
 baueAnnahmen();
+document.querySelectorAll('input[name=modus]').forEach(i => i.addEventListener('change', () => setzeModus(i.value)));
 baueRichtungen();
 $('andere-adresse').addEventListener('click', () => { $('adresse').select(); $('adresse').focus(); window.scrollTo({top: 0, behavior: 'smooth'}); });
 $('ohne3d-link').addEventListener('click', () => { grobModus(); $('richtungen').querySelector('input').focus(); });

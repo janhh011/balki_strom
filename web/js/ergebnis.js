@@ -98,6 +98,14 @@ export function zeigeErgebnis(el, antwort, a, kontext = {}) {
   const spar = rund(r.spar), mitEuro = r.spar >= 5, quote = Math.round(r.quote * 100);
   const kwh = nf(rund(r.erzeugt));
   q('ort').textContent = kontext.adresse || '';
+  // aufgezogener Rahmen: Breite und wie viele Standardmodule hineinpassen
+  const bb = antwort.modul && +antwort.modul.balkon_breite_m, passen = antwort.modul && antwort.modul.passen;
+  if (bb > 0 && Number.isFinite(+passen)) {
+    const p = +passen;
+    q('breite').textContent = `Dein Balkon ist etwa ${nf(bb, 1)} m breit, dort ${p === 1 ? 'passt 1 Modul' : p === 2 ? 'passen 2 Module' : p > 2 ? 'ist Platz für 2 Module (mehr sind bei Balkonkraftwerken unüblich)' : 'passt kein ganzes Standardmodul'}.`
+      + (antwort.modul.anzahl > Math.max(p, 0) ? ` Gerechnet ist mit ${antwort.modul.anzahl} ${antwort.modul.anzahl === 1 ? 'Modul' : 'Modulen'}.` : '');
+    q('breite').hidden = false;
+  } else q('breite').hidden = true;
   q('richtung').textContent = antwort.richtung || '';
   q('richtung').hidden = !antwort.richtung;
   q('spar').textContent = mitEuro ? eur(spar) : `${kwh} kWh`;

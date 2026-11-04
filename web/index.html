@@ -74,7 +74,7 @@
       <div class="haus-kopf">
         <div>
           <p class="label" id="haus-adresse"></p>
-          <h2 id="haus-titel" tabindex="-1">Tippe auf deinen Balkon</h2>
+          <h2 id="haus-titel" tabindex="-1">Markiere deinen Balkon</h2>
         </div>
         <button class="link" type="button" id="andere-adresse">Andere Adresse</button>
       </div>
@@ -85,9 +85,44 @@
           <div class="fortschritt" role="progressbar" aria-labelledby="viewer-ladetext" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="viewer-balken"></span></div>
         </div>
         <p class="viewer-tipp" id="viewer-tipp" hidden>Dreh das Haus mit einem Finger, zoom mit zwei. Dann tipp auf deinen Balkon.</p>
+        <div class="rahmen-hilfe" id="rahmen-hilfe" hidden>
+          <svg viewBox="0 0 96 64" width="72" height="48" aria-hidden="true" focusable="false">
+            <rect x="4" y="8" width="88" height="48" rx="4" fill="#fff" fill-opacity=".85"/>
+            <path d="M14 46h68" stroke="#8C99AA" stroke-width="3" stroke-linecap="round"/>
+            <rect class="rh-rahmen" x="18" y="22" width="56" height="22" rx="2" fill="#2E6BF0" fill-opacity=".18" stroke="#2E6BF0" stroke-width="2"/>
+            <g class="rh-finger"><circle cx="74" cy="44" r="6" fill="#13243A" fill-opacity=".85"/><circle cx="74" cy="44" r="9" fill="none" stroke="#13243A" stroke-opacity=".3" stroke-width="2"/></g>
+          </svg>
+          <p>Zieh einen Rahmen über die Breite deines Balkons</p>
+        </div>
         <p class="viewer-meldung" id="viewer-meldung" role="status" hidden></p>
       </div>
+      <div class="modus-zeile" id="modus-zeile" hidden>
+        <div class="seg seg-klein" role="radiogroup" aria-label="Was macht ein Finger im 3D-Bild?">
+          <label><input type="radio" name="modus" value="rahmen" checked><span>Rahmen ziehen</span></label>
+          <label><input type="radio" name="modus" value="drehen"><span>Ansicht drehen</span></label>
+        </div>
+        <p class="klein modus-tipp" id="modus-tipp"></p>
+      </div>
       <p class="viewer-hinweis" id="viewer-hinweis" role="status" hidden></p>
+      <section class="sonne" id="sonne" hidden aria-labelledby="sonne-titel">
+        <h3 id="sonne-titel">Sonne und Schatten an deinem Balkon</h3>
+        <div class="seg seg-klein sonne-tage" role="radiogroup" aria-label="Tag im Jahr">
+          <label><input type="radio" name="sonnentag" value="5" checked><span>21. Juni</span></label>
+          <label><input type="radio" name="sonnentag" value="2"><span>21. März</span></label>
+          <label><input type="radio" name="sonnentag" value="11"><span>21. Dezember</span></label>
+        </div>
+        <div class="sonne-zeile">
+          <button class="sonne-play" type="button" id="sonne-play" aria-label="Sonnenverlauf abspielen">
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path class="i-play" d="M8 5.5v13l10-6.5z" fill="currentColor"/><path class="i-pause" d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          </button>
+          <div class="sonne-regler">
+            <label for="sonne-zeit" class="label">Uhrzeit <output id="sonne-uhr" for="sonne-zeit">13:00</output></label>
+            <input type="range" id="sonne-zeit" min="300" max="1320" step="5" value="780" aria-valuetext="13:00 Uhr">
+          </div>
+        </div>
+        <p class="sonne-live" id="sonne-live" aria-live="polite"><span id="sonne-leistung"></span><span id="sonne-status"></span></p>
+        <p class="klein">Leistung: Mittel aus den Tagen rund um das gewählte Datum im Wetterjahr der Rechnung. Schatten: Häuser und Bäume aus dem 3D-Modell.</p>
+      </section>
       <div class="ohne3d" id="ohne3d" hidden>
         <h3 id="ohne3d-titel">Die 3D-Ansicht geht hier leider nicht</h3>
         <p id="ohne3d-text">Eine grobe Schätzung geht trotzdem. Wohin zeigt dein Balkon?</p>
@@ -100,7 +135,7 @@
     <section class="ergebnis" id="ergebnis" aria-labelledby="ergebnis-titel">
       <div class="karte warten" data-e="warten">
         <p class="label">So geht's</p>
-        <p class="warten-text">Such im Bild dein Fenster und tippe auf deinen Balkon. Dann werden Sonne und Schatten für genau diese Stelle durchgerechnet.</p>
+        <p class="warten-text" id="warten-text">Such im Bild deinen Balkon und zieh einen Rahmen über seine Breite. Dann werden Sonne und Schatten für genau diese Stelle durchgerechnet.</p>
       </div>
       <div class="karte laden" data-e="laden" hidden role="status">
         <span class="spinner" aria-hidden="true"></span><span data-e="ladetext">Wird gerechnet …</span>
@@ -117,6 +152,7 @@
             <span class="tag tag-sonne" data-e="richtung"></span>
           </div>
           <p class="ek-ort" data-e="ort"></p>
+          <p class="ek-breite" data-e="breite" hidden></p>
           <p class="ek-zahl"><span class="kpi" data-e="spar"></span> <span class="ek-zahl-text" data-e="spartext">Ersparnis pro Jahr</span></p>
           <div class="ek-balken" aria-hidden="true"><span data-e="balken"></span></div>
           <p class="klein ek-quote" data-e="quote"></p>
@@ -215,7 +251,7 @@
           <p>Im Baumarkt, Fachhandel oder online. Ein Set mit Halterung kostet meist 250 bis 500 €. Seit 2023 fällt darauf keine Mehrwertsteuer an. Darauf kannst du achten:</p>
           <ul class="haken">
             <li>Wechselrichter mit höchstens <b>800 Watt</b>. Das ist die Grenze für Balkonkraftwerke.</li>
-            <li>Module, die auf dein Geländer passen: Breite messen! Typisch sind etwa 1,7 × 1,1 m.</li>
+            <li>Module, die auf dein Geländer passen. Ein Modul ist etwa so groß wie eine Tür, quer gelegt. Miss vorher die Breite deines Geländers.</li>
             <li>Eine <b>Halterung für dein Geländer</b> (Material, Stärke), am besten zum Klemmen ohne Bohren.</li>
             <li>Ein Kabel, das bis zur nächsten Steckdose reicht, ohne Mehrfachstecker oder Kabeltrommel.</li>
             <li>Ein Datenblatt mit Modul- und Wechselrichterleistung. Das brauchst du für die Anmeldung.</li>
@@ -239,7 +275,13 @@
             <li>„Anlage registrieren“ wählen und dort <b>Steckersolargerät</b>. Das ist die vereinfachte Anmeldung.</li>
             <li>Diese Angaben eintragen:</li>
           </ol>
-          <dl class="mastr" id="mastr-werte"></dl>
+          <dl class="mastr">
+            <dt>Standort</dt><dd>deine Adresse</dd>
+            <dt>Datum der Inbetriebnahme</dt><dd>der Tag, an dem du den Stecker zum ersten Mal einsteckst</dd>
+            <dt>Modulleistung in Wp</dt><dd>steht auf dem Datenblatt oder Typenschild der Module</dd>
+            <dt>Wechselrichterleistung in W</dt><dd>steht auf dem Datenblatt oder Typenschild des Wechselrichters</dd>
+            <dt>Zählernummer</dt><dd>steht auf deinem Stromzähler</dd>
+          </dl>
           <p class="klein">Zähler: Hast du noch einen alten Zähler mit Drehscheibe, darfst du trotzdem schon loslegen. Falls nötig, tauscht der Messstellenbetreiber ihn aus und meldet sich dafür bei dir.</p>
         </li>
         <li class="schritt">

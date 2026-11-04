@@ -1,7 +1,7 @@
-// "So einfach geht's": E-Mail an Vermieter*in (wird nur im Browser erzeugt) + Werte für das Marktstammdatenregister
+// Schritte: E-Mail an die Vermieterseite (wird nur im Browser erzeugt). Konkrete Ausstattung erst nach einem Ergebnis.
 import { nf } from './ergebnis.js';
 
-let kontext = {adresse: null, module: 2, wpJeModul: 430, breite: 1.72, hoehe: 1.13, aufstellung: 'senkrecht'};
+let kontext = {adresse: null, berechnet: false, module: 2, wpJeModul: 430, breite: 1.72, hoehe: 1.13, aufstellung: 'senkrecht'};
 let bearbeitet = false;
 const $ = id => document.getElementById(id);
 
@@ -21,9 +21,12 @@ export function mailText() {
     `ich wohne in der ${adr}${whg ? ` (Wohnung: ${whg})` : ''} und möchte an meinem Balkon ein kleines Balkonkraftwerk (Steckersolargerät) anbringen. Dafür bitte ich Sie um Ihre Zustimmung nach § 554 BGB.`,
     '',
     'Geplant ist:',
-    `- ${k.module === 1 ? '1 Solarmodul' : `${k.module} Solarmodule`}, ${k.module === 1 ? '' : 'je '}etwa ${nf(k.breite, 2)} × ${nf(k.hoehe, 2)} m, zusammen rund ${nf(wp)} Watt`,
+    // vor dem Ergebnis allgemein, danach die berechnete Ausstattung (gerundet)
+    k.berechnet
+      ? `- ${k.module === 1 ? '1 Solarmodul' : `${k.module} Solarmodule`}, ${k.module === 1 ? '' : 'je '}etwa ${nf(k.breite, 1)} × ${nf(k.hoehe, 1)} m, zusammen rund ${nf(Math.round(wp / 10) * 10)} Watt`
+      : '- ein oder zwei Solarmodule, je etwa so groß wie eine Tür, quer am Geländer',
     '- ein Wechselrichter mit höchstens 800 Watt',
-    `- Befestigung mit einer Halterung am Balkongeländer, ${k.aufstellung === 'geneigt' ? 'leicht ausgestellt' : 'senkrecht'}, ohne Bohren in Fassade oder Geländer`,
+    `- Befestigung mit einer Halterung am Balkongeländer, ${k.berechnet && k.aufstellung === 'geneigt' ? 'leicht ausgestellt' : k.berechnet ? 'senkrecht' : 'senkrecht oder leicht ausgestellt'}, ohne Bohren in Fassade oder Geländer`,
     '- Anschluss an eine vorhandene Steckdose',
     '',
     'Die Montage erfolgt sicher und sturmfest nach der Anleitung des Herstellers. Das Gerät melde ich im Marktstammdatenregister an. Gern stimme ich Art und Ort der Befestigung mit Ihnen ab und kläre mit meiner Haftpflichtversicherung, dass das Gerät mitversichert ist. Bei einem Auszug baue ich alles wieder ab.',
@@ -40,15 +43,7 @@ function aktualisiere(erzwingen = false) {
   const {betreff, text} = mailText();
   if (!bearbeitet || erzwingen) { $('mail-text').value = text; bearbeitet = false; $('mail-neu').hidden = true; }
   $('mail-betreff').textContent = betreff;
-  const k = kontext, wp = k.module * k.wpJeModul;
-  $('mastr-werte').innerHTML =
-    `<dt>Standort</dt><dd>${k.adresse ? `${esc(k.adresse.s)} ${esc(k.adresse.n)}, ${esc(k.adresse.p)} Berlin` : 'deine Adresse'}</dd>` +
-    `<dt>Modulleistung</dt><dd>${nf(wp)} Wp <span class="klein">(steht auf dem Modul bzw. im Datenblatt)</span></dd>` +
-    `<dt>Wechselrichter</dt><dd>höchstens 800 W <span class="klein">(Datenblatt)</span></dd>` +
-    `<dt>Inbetriebnahme</dt><dd>der Tag, an dem du den Stecker zum ersten Mal einsteckst</dd>` +
-    `<dt>Zählernummer</dt><dd>steht auf deinem Stromzähler</dd>`;
 }
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
 export function setzeKontext(k) {
   kontext = {...kontext, ...k};

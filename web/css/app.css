@@ -309,3 +309,44 @@ textarea { min-height: 280px; resize: vertical; font-size: 15px; line-height: 22
 .schritt-kopf + .fall { margin-top: 0; }
 .mail + .fall { margin-top: var(--s4); }
 .start h1 + .vertrauen { margin: 0 0 var(--s3); }
+
+/* Rahmen ziehen: Hinweis-Animation oben links im Viewer */
+.rahmen-hilfe { position: absolute; left: var(--s2); top: var(--s2); display: flex; align-items: center; gap: var(--s2); max-width: calc(100% - 16px);
+  padding: var(--s2) 12px var(--s2) var(--s2); background: rgba(255, 255, 255, .94); border-radius: var(--r-feld); box-shadow: 0 4px 16px rgba(19, 36, 58, .12);
+  pointer-events: none; transition: opacity .4s; }
+.rahmen-hilfe p { margin: 0; font: 600 14px/20px var(--figtree); max-width: 220px; }
+.rahmen-hilfe svg { flex: none; }
+.rahmen-hilfe.aus { opacity: 0; }
+.rahmen-hilfe.bewegt .rh-rahmen { transform-box: fill-box; transform-origin: left center; animation: rh-rahmen 2.4s ease-in-out 3; }
+.rahmen-hilfe.bewegt .rh-finger { animation: rh-finger 2.4s ease-in-out 3; }
+@keyframes rh-rahmen { 0%, 12% { transform: scale(.02, .1); opacity: 0; } 15% { opacity: 1; } 70%, 100% { transform: scale(1, 1); opacity: 1; } }
+@keyframes rh-finger { 0%, 12% { transform: translate(-56px, -22px); opacity: 0; } 15% { opacity: 1; } 70% { transform: translate(0, 0); opacity: 1; } 85%, 100% { transform: translate(0, 0); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rahmen-hilfe .rh-rahmen, .rahmen-hilfe .rh-finger { animation: none !important; } }
+
+/* Umschalter Rahmen ziehen / Ansicht drehen */
+.modus-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s2); }
+.modus-tipp { margin: 0; flex: 1 1 200px; }
+.seg-klein span { min-height: 40px; padding: 6px 12px; font-size: 14px; }
+
+/* Breite im Ergebnis */
+.ek-breite { margin: calc(-1 * var(--s2)) 0 var(--s3); }
+
+/* Sonne und Schatten */
+.sonne { margin-top: var(--s3); padding: var(--s3); background: var(--weiss); border-radius: var(--r-karte); }
+@media (min-width: 480px) { .sonne { padding: var(--s4); } }
+.sonne h3 { margin-bottom: var(--s3); }
+.sonne-tage { margin-bottom: var(--s3); }
+.sonne-zeile { display: flex; align-items: flex-end; gap: var(--s3); }
+.sonne-play { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--solar-blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.sonne-play:hover { background: var(--blue-dunkel); }
+.sonne-play .i-pause { display: none; }
+.sonne-play.spielt .i-play { display: none; }
+.sonne-play.spielt .i-pause { display: inline; }
+.sonne-regler { flex: 1; min-width: 0; }
+.sonne-regler .label { display: flex; justify-content: space-between; }
+.sonne-regler output { font: 600 14px/18px var(--sora); color: var(--navy); font-variant-numeric: tabular-nums; }
+.sonne input[type=range] { width: 100%; height: 32px; accent-color: var(--sonne); margin: 0; }
+.sonne-live { margin: var(--s3) 0 var(--s2); padding: var(--s2) 12px; background: var(--sonne-tint); border-radius: var(--r-feld); font-weight: 600; min-height: 40px; }
+.sonne .klein { margin: 0; }
+/* mit Sonnenbereich ist die linke Spalte zu hoch zum Mitlaufen */
+@media (min-width: 1000px) { .haus:has(#sonne:not([hidden])) { position: static; } }
